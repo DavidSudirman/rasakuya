@@ -9,6 +9,34 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
+const AuthCallback = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Handles the OAuth or magic link redirect
+    supabase.auth
+      .getSessionFromUrl({ storeSession: true }) // important to store the session
+      .then(({ error }) => {
+        if (error) {
+          console.error('Auth error:', error.message);
+        } else {
+          console.log('User signed in successfully');
+        }
+
+        // Redirect wherever you want after login
+        navigate('/');
+      });
+  }, [navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p>Signing you in...</p>
+    </div>
+  );
+};
+
+export default AuthCallback;
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
