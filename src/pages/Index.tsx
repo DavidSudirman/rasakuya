@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MoodSelector } from '@/components/MoodSelector';
 import { MoodCalendar } from '@/components/MoodCalendar';
 import { MoodPrediction } from '@/components/MoodPrediction';
 import { MoodStats } from '@/components/MoodStats';
-import { Heart, Sparkles, Calendar, BarChart3 } from 'lucide-react';
+import { Heart, Sparkles, Calendar, BarChart3, LogOut, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MoodEntry {
   date: string;
@@ -19,58 +22,107 @@ const Index = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(new Date().toISOString().split('T')[0]);
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'tracker' | 'calendar' | 'stats' | 'prediction'>('tracker');
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user, signOut, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
-  // Load mood entries from localStorage
+  // Check authentication and load mood entries
   useEffect(() => {
-    const saved = localStorage.getItem('rasakuya-moods');
-    if (saved) {
-      try {
-        setMoodEntries(JSON.parse(saved));
-      } catch (error) {
-        console.error('Failed to load mood entries:', error);
-      }
+    if (authLoading) return;
+    
+    if (!user) {
+      navigate('/auth');
+      return;
     }
-  }, []);
 
-  // Save mood entries to localStorage
-  useEffect(() => {
-    localStorage.setItem('rasakuya-moods', JSON.stringify(moodEntries));
-  }, [moodEntries]);
+    loadMoodEntries();
+  }, [user, authLoading, navigate]);
 
-  const handleMoodSelect = (moodId: string) => {
-    setSelectedMood(moodId);
+  const loadMoodEntries = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('mood_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('logged_at', { ascending: true });
+
+      if (error) throw error;
+
+      const formattedEntries = data.map((entry: any) => ({
+        date: new Date(entry.logged_at).toISOString().split('T')[0],
+        mood: entry.mood,
+        emoji: entry.emoji || getMoodEmoji(entry.mood)
+      }));
+
+      setMoodEntries(formattedEntries);
+    } catch (error) {
+      console.error('Error loading mood entries:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data mood.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const saveMood = () => {
-    if (!selectedMood || !selectedDate) return;
-
-    const moodEmojis = {
+  const getMoodEmoji = (mood: string) => {
+    const moodEmojis: { [key: string]: string } = {
       'sangat-bahagia': '😄',
       'bahagia': '😊',
       'netral': '😐',
       'sedih': '😔',
       'marah': '😠'
     };
+    return moodEmojis[mood] || '😐';
+  };
 
-    const newEntry: MoodEntry = {
-      date: selectedDate,
-      mood: selectedMood,
-      emoji: moodEmojis[selectedMood as keyof typeof moodEmojis]
-    };
+  const handleMoodSelect = (moodId: string) => {
+    setSelectedMood(moodId);
+  };
 
-    // Remove existing entry for the same date if any
-    const updatedEntries = moodEntries.filter(entry => entry.date !== selectedDate);
-    updatedEntries.push(newEntry);
-    updatedEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    setMoodEntries(updatedEntries);
-    setSelectedMood(null);
-    
-    toast({
-      title: "Mood tersimpan!",
-      description: `Mood untuk ${new Date(selectedDate).toLocaleDateString('id-ID')} berhasil disimpan.`,
-    });
+  const saveMood = async () => {
+    if (!selectedMood || !selectedDate || !user) return;
+
+    try {
+      const loggedAt = new Date(selectedDate + 'T12:00:00Z').toISOString();
+      
+      const { data, error } = await supabase
+        .from('mood_logs')
+        .upsert([
+          {
+            user_id: user.id,
+            mood: selectedMood,
+            logged_at: loggedAt
+          }
+        ], { 
+          onConflict: 'user_id,logged_at',
+          ignoreDuplicates: false 
+        })
+        .select();
+
+      if (error) throw error;
+
+      // Reload mood entries to get the updated data
+      await loadMoodEntries();
+      setSelectedMood(null);
+      
+      toast({
+        title: "Mood tersimpan!",
+        description: `Mood untuk ${new Date(selectedDate).toLocaleDateString('id-ID')} berhasil disimpan.`,
+      });
+    } catch (error) {
+      console.error('Error saving mood:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan mood. Silakan coba lagi.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getCurrentMoodForDate = (date: string) => {
@@ -79,17 +131,53 @@ const Index = () => {
 
   const currentMoodEntry = selectedDate ? getCurrentMoodForDate(selectedDate) : null;
 
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center">
+        <div className="text-center">
+          <Heart className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Memuat RasakuYa!...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Redirect handled in useEffect
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background">
       {/* Header */}
       <div className="bg-gradient-calm text-white">
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Heart className="h-8 w-8 text-pink-300" />
-            <h1 className="text-3xl font-bold">RasakuYa!</h1>
-            <Sparkles className="h-6 w-6 text-yellow-300" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Heart className="h-8 w-8 text-pink-300" />
+              <div>
+                <h1 className="text-3xl font-bold">RasakuYa!</h1>
+                <p className="text-sm opacity-90">Lacak perasaanmu, prediksi hari esok</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  Halo, {user.user_metadata?.display_name || user.email?.split('@')[0] || 'Pengguna'}!
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Keluar</span>
+              </Button>
+            </div>
           </div>
-          <p className="text-center text-lg opacity-90">Lacak perasaanmu, prediksi hari esok</p>
         </div>
       </div>
 
