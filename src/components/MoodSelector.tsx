@@ -50,15 +50,23 @@ export const MoodSelector: React.FC<MoodSelectorProps> = ({
             className={`
               p-4 cursor-pointer transition-all duration-300 hover:scale-105 border-2
               ${selectedMood === mood.id 
-                ? `border-${mood.color} shadow-lg shadow-${mood.color}/20` 
-                : 'border-border hover:border-primary/50'
+                ? 'border-primary bg-primary/10 shadow-lg ring-2 ring-primary/20' 
+                : 'border-border hover:border-primary/50 hover:bg-accent/50'
               }
             `}
             onClick={() => onMoodSelect(mood.id)}
           >
             <div className="text-center">
-              <div className="text-3xl mb-2">{mood.emoji}</div>
-              <p className="text-xs font-medium">{mood.name}</p>
+              <div className={`text-3xl mb-2 transition-all duration-300 ${
+                selectedMood === mood.id ? 'scale-110' : ''
+              }`}>
+                {mood.emoji}
+              </div>
+              <p className={`text-xs font-medium transition-colors duration-300 ${
+                selectedMood === mood.id ? 'text-primary font-semibold' : ''
+              }`}>
+                {mood.name}
+              </p>
             </div>
           </Card>
         ))}

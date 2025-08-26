@@ -69,51 +69,69 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
     setInput('');
     setLoading(true);
 
-    try {
-      const moodContext = getMoodContext();
-      
-      // Build history for the API call
-      const history = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      try {
+        const moodContext = getMoodContext();
+        
+        // Build history for the API call
+        const history = messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
 
-      // Add mood context to the message
-      const messageWithContext = `Context: ${moodContext}\n\nUser message: ${currentInput}`;
+        // Add mood context to the message
+        const messageWithContext = `Context: ${moodContext}\n\nUser message: ${currentInput}`;
 
-      const { data, error } = await supabase.functions.invoke('chat-openrouter', {
-        body: {
-          message: messageWithContext,
-          history: history
+        const { data, error } = await supabase.functions.invoke('chat-openrouter', {
+          body: {
+            message: messageWithContext,
+            history: history
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message);
         }
-      });
 
-      if (error) {
-        throw new Error(error.message);
+        if (!data.success) {
+          // Handle rate limiting specifically
+          if (data.error.includes('temporarily busy')) {
+            toast({
+              title: "Service Busy",
+              description: "The AI service is temporarily busy. Please try again in a few moments.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          throw new Error(data.error || 'Unknown error occurred');
+        }
+
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: data.answer,
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+        
+      } catch (error) {
+        console.error('Error sending message:', error);
+        let errorMessage = "Failed to send message. Please try again.";
+        
+        if (error.message.includes('temporarily busy')) {
+          errorMessage = "The AI service is temporarily busy. Please try again in a few moments.";
+        } else if (error.message.includes('rate limit')) {
+          errorMessage = "Too many requests. Please wait a moment before trying again.";
+        }
+        
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Unknown error occurred');
-      }
-
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.answer,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-      
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

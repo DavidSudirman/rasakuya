@@ -111,9 +111,21 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
+      
+      // Handle rate limiting specifically
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'The AI service is temporarily busy. Please try again in a few moments.' 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       return new Response(JSON.stringify({ 
         success: false, 
-        error: `OpenRouter API error: ${response.status}` 
+        error: `AI service temporarily unavailable. Please try again later.` 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
