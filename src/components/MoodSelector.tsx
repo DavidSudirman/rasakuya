@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from './ui/card';
+import { Textarea } from './ui/textarea';
+import { Label } from './ui/label';
 
 interface MoodOption {
   id: string;
@@ -19,12 +21,21 @@ const moodOptions: MoodOption[] = [
 interface MoodSelectorProps {
   selectedMood: string | null;
   onMoodSelect: (moodId: string) => void;
+  description: string;
+  onDescriptionChange: (description: string) => void;
 }
 
-export const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onMoodSelect }) => {
+export const MoodSelector: React.FC<MoodSelectorProps> = ({ 
+  selectedMood, 
+  onMoodSelect, 
+  description, 
+  onDescriptionChange 
+}) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h3 className="text-lg font-semibold text-center">Bagaimana perasaanmu hari ini?</h3>
+      
+      {/* Mood Selection */}
       <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
         {moodOptions.map((mood) => (
           <Card
@@ -45,6 +56,22 @@ export const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onMood
           </Card>
         ))}
       </div>
+
+      {/* Description Input */}
+      {selectedMood && (
+        <div className="space-y-2">
+          <Label htmlFor="mood-description">
+            Ceritakan lebih detail tentang perasaanmu (opsional)
+          </Label>
+          <Textarea
+            id="mood-description"
+            placeholder="Apa yang membuatmu merasa seperti ini? Ceritakan aktivitas atau kejadian hari ini..."
+            value={description}
+            onChange={(e) => onDescriptionChange(e.target.value)}
+            className="min-h-[80px] resize-none"
+          />
+        </div>
+      )}
     </div>
   );
 };

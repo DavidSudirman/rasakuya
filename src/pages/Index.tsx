@@ -6,7 +6,8 @@ import { MoodSelector } from '@/components/MoodSelector';
 import { MoodCalendar } from '@/components/MoodCalendar';
 import { MoodPrediction } from '@/components/MoodPrediction';
 import { MoodStats } from '@/components/MoodStats';
-import { Heart, Sparkles, Calendar, BarChart3, LogOut, User } from 'lucide-react';
+import { AITherapist } from '@/components/AITherapist';
+import { Heart, Sparkles, Calendar, BarChart3, LogOut, User, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,13 +16,15 @@ interface MoodEntry {
   date: string;
   mood: string;
   emoji: string;
+  description?: string;
 }
 
 const Index = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [moodDescription, setMoodDescription] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string | null>(new Date().toISOString().split('T')[0]);
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<'tracker' | 'calendar' | 'stats' | 'prediction'>('tracker');
+  const [activeTab, setActiveTab] = useState<'tracker' | 'calendar' | 'stats' | 'prediction' | 'therapist'>('tracker');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user, signOut, loading: authLoading } = useAuth();
@@ -54,7 +57,8 @@ const Index = () => {
       const formattedEntries = data.map((entry: any) => ({
         date: new Date(entry.logged_at).toISOString().split('T')[0],
         mood: entry.mood,
-        emoji: entry.emoji || getMoodEmoji(entry.mood)
+        emoji: entry.emoji || getMoodEmoji(entry.mood),
+        description: entry.description
       }));
 
       setMoodEntries(formattedEntries);
@@ -97,7 +101,8 @@ const Index = () => {
           {
             user_id: user.id,
             mood: selectedMood,
-            logged_at: loggedAt
+            logged_at: loggedAt,
+            description: moodDescription.trim() || null
           }
         ], { 
           onConflict: 'user_id,logged_at',
@@ -110,6 +115,7 @@ const Index = () => {
       // Reload mood entries to get the updated data
       await loadMoodEntries();
       setSelectedMood(null);
+      setMoodDescription('');
       
       toast({
         title: "Mood tersimpan!",
@@ -189,7 +195,8 @@ const Index = () => {
               { id: 'tracker', label: 'Tracker', icon: Heart },
               { id: 'calendar', label: 'Kalender', icon: Calendar },
               { id: 'stats', label: 'Statistik', icon: BarChart3 },
-              { id: 'prediction', label: 'Prediksi AI', icon: Sparkles }
+              { id: 'prediction', label: 'Prediksi AI', icon: Sparkles },
+              { id: 'therapist', label: 'AI Therapist', icon: Bot }
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -239,7 +246,12 @@ const Index = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <MoodSelector selectedMood={selectedMood} onMoodSelect={handleMoodSelect} />
+                    <MoodSelector 
+                      selectedMood={selectedMood} 
+                      onMoodSelect={handleMoodSelect}
+                      description={moodDescription}
+                      onDescriptionChange={setMoodDescription}
+                    />
                     {selectedMood && (
                       <div className="text-center">
                         <Button onClick={saveMood} size="lg" className="px-8">
@@ -285,6 +297,12 @@ const Index = () => {
                   </Button>
                 </Card>
               )}
+            </div>
+          )}
+
+          {activeTab === 'therapist' && (
+            <div className="space-y-6">
+              <AITherapist moodEntries={moodEntries} />
             </div>
           )}
         </div>
