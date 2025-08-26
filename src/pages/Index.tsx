@@ -22,10 +22,12 @@ interface MoodEntry {
 const Index = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [moodDescription, setMoodDescription] = useState<string>('');
+  const [energyLevel, setEnergyLevel] = useState<number>(5);
   const [selectedDate, setSelectedDate] = useState<string | null>(new Date().toISOString().split('T')[0]);
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'tracker' | 'calendar' | 'stats' | 'prediction' | 'therapist'>('tracker');
   const [loading, setLoading] = useState(true);
+  const [isEditingToday, setIsEditingToday] = useState(false);
   const { toast } = useToast();
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -79,6 +81,7 @@ const Index = () => {
       'sangat-bahagia': '😄',
       'bahagia': '😊',
       'netral': '😐',
+      'cemas': '😰',
       'sedih': '😔',
       'marah': '😠'
     };
@@ -102,7 +105,8 @@ const Index = () => {
             user_id: user.id,
             mood: selectedMood,
             logged_at: loggedAt,
-            description: moodDescription.trim() || null
+            description: moodDescription.trim() || null,
+            energy_level: energyLevel
           }
         ], { 
           onConflict: 'user_id,logged_at',
@@ -116,6 +120,8 @@ const Index = () => {
       await loadMoodEntries();
       setSelectedMood(null);
       setMoodDescription('');
+      setEnergyLevel(5);
+      setIsEditingToday(false);
       
       toast({
         title: "Mood tersimpan!",
@@ -236,13 +242,25 @@ const Index = () => {
                   </p>
                 </div>
 
-                {currentMoodEntry ? (
+                {currentMoodEntry && !isEditingToday ? (
                   <div className="text-center space-y-4">
                     <div className="text-6xl">{currentMoodEntry.emoji}</div>
                     <p className="text-lg font-medium">Kamu sudah mencatat mood untuk hari ini!</p>
-                    <Button onClick={() => setActiveTab('calendar')} className="mt-4">
-                      Lihat Kalender Mood
-                    </Button>
+                    <div className="flex gap-3 justify-center">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setSelectedMood(currentMoodEntry.mood);
+                          setMoodDescription(currentMoodEntry.description || '');
+                          setIsEditingToday(true);
+                        }}
+                      >
+                        Ubah Mood Hari Ini
+                      </Button>
+                      <Button onClick={() => setActiveTab('calendar')}>
+                        Lihat Kalender Mood
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -251,12 +269,27 @@ const Index = () => {
                       onMoodSelect={handleMoodSelect}
                       description={moodDescription}
                       onDescriptionChange={setMoodDescription}
+                      energyLevel={energyLevel}
+                      onEnergyLevelChange={setEnergyLevel}
                     />
                     {selectedMood && (
-                      <div className="text-center">
+                      <div className="text-center space-y-3">
                         <Button onClick={saveMood} size="lg" className="px-8">
-                          Simpan Mood
+                          {isEditingToday ? 'Update Mood' : 'Simpan Mood'}
                         </Button>
+                        {isEditingToday && (
+                          <Button 
+                            variant="outline" 
+                            onClick={() => {
+                              setSelectedMood(null);
+                              setMoodDescription('');
+                              setEnergyLevel(5);
+                              setIsEditingToday(false);
+                            }}
+                          >
+                            Batal
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
