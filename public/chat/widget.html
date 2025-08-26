@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rasakuya Chat Widget</title>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto max-w-2xl p-4">
+        <div x-data="chatWidget()" class="bg-white rounded-lg shadow-lg h-[600px] flex flex-col">
+            <!-- Header -->
+            <div class="bg-blue-600 text-white p-4 rounded-t-lg">
+                <h1 class="text-xl font-semibold">Rasakuya Chat</h1>
+                <p class="text-blue-100 text-sm">Your empathetic AI companion</p>
+            </div>
+            
+            <!-- Messages -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-4" x-ref="messagesContainer">
+                <template x-for="message in messages" :key="message.id">
+                    <div class="flex" :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
+                        <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg" 
+                             :class="message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'">
+                            <p class="text-sm" x-text="message.content"></p>
+                            <p class="text-xs mt-1 opacity-70" x-text="message.timestamp"></p>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Typing indicator -->
+                <div x-show="isLoading" x-cloak class="flex justify-start">
+                    <div class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg">
+                        <div class="flex space-x-1">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Input -->
+            <div class="border-t p-4">
+                <form @submit.prevent="sendMessage" class="flex space-x-2">
+                    <input 
+                        type="text" 
+                        x-model="currentMessage" 
+                        placeholder="Type your message..." 
+                        :disabled="isLoading"
+                        class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                    />
+                    <button 
+                        type="submit" 
+                        :disabled="isLoading || !currentMessage.trim()"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function chatWidget() {
+            return {
+                messages: [
+                    {
+                        id: 1,
+                        role: 'assistant',
+                        content: 'Hello! I\'m here to help you reflect on your feelings. How are you doing today?',
+                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    }
+                ],
+                currentMessage: '',
+                isLoading: false,
+                messageIdCounter: 2,
+
+                init() {
+                    this.scrollToBottom();
+                },
+
+                async sendMessage() {
+                    if (!this.currentMessage.trim() || this.isLoading) return;
+
+                    const userMessage = {
+                        id: this.messageIdCounter++,
+                        role: 'user',
+                        content: this.currentMessage.trim(),
+                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    };
+
+                    this.messages.push(userMessage);
+                    const messageToSend = this.currentMessage.trim();
+                    this.currentMessage = '';
+                    this.isLoading = true;
+
+                    this.$nextTick(() => {
+                        this.scrollToBottom();
+                    });
+
+                    try {
+                        // Get conversation history for context
+                        const history = this.messages
+                            .filter(m => m.role !== 'system')
+                            .slice(1, -1) // Exclude the initial greeting and the message we just added
+                            .map(m => ({ role: m.role, content: m.content }));
+
+                        const response = await fetch('https://nkbgomndiyagxrlowrje.supabase.co/functions/v1/chat-openrouter', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                message: messageToSend,
+                                history: history
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            const assistantMessage = {
+                                id: this.messageIdCounter++,
+                                role: 'assistant',
+                                content: data.answer,
+                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            };
+                            this.messages.push(assistantMessage);
+                        } else {
+                            const errorMessage = {
+                                id: this.messageIdCounter++,
+                                role: 'assistant',
+                                content: `Sorry, I encountered an error: ${data.error}`,
+                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            };
+                            this.messages.push(errorMessage);
+                        }
+                    } catch (error) {
+                        console.error('Chat error:', error);
+                        const errorMessage = {
+                            id: this.messageIdCounter++,
+                            role: 'assistant',
+                            content: 'Sorry, I\'m having trouble connecting right now. Please try again later.',
+                            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        };
+                        this.messages.push(errorMessage);
+                    } finally {
+                        this.isLoading = false;
+                        this.$nextTick(() => {
+                            this.scrollToBottom();
+                        });
+                    }
+                },
+
+                scrollToBottom() {
+                    this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
