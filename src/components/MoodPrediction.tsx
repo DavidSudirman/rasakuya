@@ -28,7 +28,8 @@ export const MoodPrediction: React.FC<MoodPredictionProps> = ({ moodEntries }) =
         prediction: '😊', 
         confidence: 'Rendah', 
         message: 'Butuh lebih banyak data untuk prediksi akurat',
-        trend: 'stable'
+        trend: 'stable',
+        average: null
       };
     }
 
@@ -204,7 +205,7 @@ Based on these patterns, explain why the predicted mood trend makes sense and gi
         </div>
         
         <div className="text-xs opacity-75 text-center">
-          Berdasarkan {moodEntries.length} entri mood • Skor rata-rata: {average.toFixed(1)}/5
+          Berdasarkan {moodEntries.length} entri mood • Skor rata-rata: {average && !isNaN(average) ? average.toFixed(1) : 'N/A'}/5
         </div>
       </div>
     </Card>
