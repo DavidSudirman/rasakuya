@@ -84,13 +84,23 @@ serve(async (req) => {
     // Build messages array - system prompt + last 10 history + current message
     const systemMessage = {
       role: 'system',
-      content: 'You are an empathetic, friendly assistant who helps users reflect on their feelings. Use a warm, concise tone.'
+      content: `Kamu adalah RasakuYa!, AI terapis yang ramah dan memahami perasaan dalam bahasa Indonesia. Kamu:
+- Selalu merespons dengan bahasa Indonesia yang warm dan supportive
+- Memberikan saran praktis dan empati
+- Fokus pada kesehatan mental dan self-care
+- Tidak menggantikan terapis profesional, tapi memberikan dukungan emosional
+- Gunakan emoji secukupnya untuk membuat percakapan lebih hangat
+- Jika user mengungkapkan masalah serius, sarankan untuk mencari bantuan profesional
+
+Contoh respon kamu: "Hai! 😊 Aku di sini untuk mendengarkan dan membantu kamu merasa lebih baik. Ceritakan apa yang sedang kamu rasakan hari ini?"
+
+Selalu prioritaskan keamanan dan kesejahteraan user.`
     };
 
     const recentHistory = history.slice(-10); // Keep last 10 messages
     const messages = [systemMessage, ...recentHistory, { role: 'user', content: message }];
 
-    console.log('Sending request to OpenRouter with model: deepseek/deepseek-chat-v3-0324:free');
+    console.log('Sending request to OpenRouter with model: deepseek/deepseek-chat');
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -101,7 +111,7 @@ serve(async (req) => {
         'X-Title': 'Rasakuya! Chatbot',
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-chat-v3-0324:free',
+        model: 'deepseek/deepseek-chat',
         messages,
         temperature: 0.7,
         stream: false,
