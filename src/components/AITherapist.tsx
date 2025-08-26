@@ -96,8 +96,8 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
           // Handle rate limiting specifically
           if (data.error.includes('temporarily busy')) {
             toast({
-              title: "Service Busy",
-              description: "The AI service is temporarily busy. Please try again in a few moments.",
+              title: "Layanan Sibuk",
+              description: "Layanan AI sedang sibuk sementara. Silakan coba lagi dalam beberapa saat.",
               variant: "destructive"
             });
             return;
@@ -116,16 +116,16 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
         
       } catch (error) {
         console.error('Error sending message:', error);
-        let errorMessage = "Failed to send message. Please try again.";
+        let errorMessage = "Gagal mengirim pesan. Silakan coba lagi.";
         
         if (error.message.includes('temporarily busy')) {
-          errorMessage = "The AI service is temporarily busy. Please try again in a few moments.";
+          errorMessage = "Layanan AI sedang sibuk sementara. Silakan coba lagi dalam beberapa saat.";
         } else if (error.message.includes('rate limit')) {
-          errorMessage = "Too many requests. Please wait a moment before trying again.";
+          errorMessage = "Terlalu banyak permintaan. Silakan tunggu sebentar sebelum mencoba lagi.";
         }
         
         toast({
-          title: "Error",
+          title: "Kesalahan",
           description: errorMessage,
           variant: "destructive"
         });
@@ -145,8 +145,8 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
     <Card className="p-6">
       <div className="text-center mb-6">
         <Bot className="h-8 w-8 text-primary mx-auto mb-2" />
-        <h2 className="text-xl font-semibold">AI Therapist</h2>
-        <p className="text-sm text-muted-foreground">Powered by secure AI - no API keys needed</p>
+        <h2 className="text-xl font-semibold">Terapis AI</h2>
+        <p className="text-sm text-muted-foreground">Didukung oleh AI aman - tidak perlu API key</p>
       </div>
 
       <div className="space-y-4">
@@ -155,7 +155,7 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Hi! I'm here to listen and help. Tell me what's on your mind today.</p>
+              <p>Hai! Aku di sini untuk mendengarkan dan membantu. Ceritakan apa yang sedang kamu rasakan hari ini.</p>
             </div>
           ) : (
             messages.map((message, index) => (
@@ -175,7 +175,7 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
                   }`}>
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     <p className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString('en-US', { 
+                      {message.timestamp.toLocaleTimeString('id-ID', { 
                         hour: '2-digit', 
                         minute: '2-digit' 
                       })}
@@ -209,7 +209,7 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Share your feelings or thoughts..."
+            placeholder="Bagikan perasaan atau pikiranmu..."
             className="min-h-[80px] resize-none"
             disabled={loading}
           />
