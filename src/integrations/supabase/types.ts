@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           activities: string[] | null
           created_at: string
+          description: string | null
           energy_level: number
           id: string
           logged_at: string
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           activities?: string[] | null
           created_at?: string
+          description?: string | null
           energy_level?: number
           id?: string
           logged_at?: string
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           activities?: string[] | null
           created_at?: string
+          description?: string | null
           energy_level?: number
           id?: string
           logged_at?: string
