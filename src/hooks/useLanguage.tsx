@@ -37,9 +37,9 @@ const translations = {
     'tracker.need_3_days': 'Log moods for at least 3 days to get more accurate predictions!',
     
     // AI Therapist
-    'therapist.title': 'AI Therapist',
-    'therapist.subtitle': 'Powered by secure AI - no API keys needed',
-    'therapist.greeting': 'Hi! I\'m here to listen and help. Tell me what\'s on your mind today.',
+    'therapist.title': 'ARUNA',
+    'therapist.subtitle': 'Your personal AI therapist',
+    'therapist.greeting': 'Hi! I\'m ARUNA, your personal AI therapist. I\'m here to listen and help. Tell me what\'s on your mind today.',
     'therapist.placeholder': 'Share your feelings or thoughts...',
     'therapist.service_busy': 'Service Busy',
     'therapist.service_busy_desc': 'The AI service is temporarily busy. Please try again in a few moments.',
@@ -93,9 +93,9 @@ const translations = {
     'tracker.need_3_days': 'Catat mood setidaknya 3 hari untuk mendapatkan prediksi yang lebih akurat!',
     
     // AI Therapist
-    'therapist.title': 'Terapis AI',
-    'therapist.subtitle': 'Didukung oleh AI aman - tidak perlu API key',
-    'therapist.greeting': 'Hai! Aku di sini untuk mendengarkan dan membantu. Ceritakan apa yang sedang kamu rasakan hari ini.',
+    'therapist.title': 'ARUNA',
+    'therapist.subtitle': 'Terapis AI pribadi kamu',
+    'therapist.greeting': 'Hai! Aku ARUNA, terapis AI pribadi kamu. Aku di sini untuk mendengarkan dan membantu. Ceritakan apa yang sedang kamu rasakan hari ini.',
     'therapist.placeholder': 'Bagikan perasaan atau pikiranmu...',
     'therapist.service_busy': 'Layanan Sibuk',
     'therapist.service_busy_desc': 'Layanan AI sedang sibuk sementara. Silakan coba lagi dalam beberapa saat.',
