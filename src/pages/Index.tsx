@@ -19,6 +19,8 @@ interface MoodEntry {
   mood: string;
   emoji: string;
   description?: string;
+  energy_level?: number;
+  id?: string;
 }
 
 const Index = () => {
@@ -63,7 +65,9 @@ const Index = () => {
         date: new Date(entry.logged_at).toISOString().split('T')[0],
         mood: entry.mood,
         emoji: entry.emoji || getMoodEmoji(entry.mood),
-        description: entry.description
+        description: entry.description,
+        energy_level: entry.energy_level,
+        id: entry.id
       }));
 
       setMoodEntries(formattedEntries);
@@ -308,6 +312,7 @@ const Index = () => {
                 moodEntries={moodEntries}
                 onDateSelect={setSelectedDate}
                 selectedDate={selectedDate}
+                onMoodUpdate={loadMoodEntries}
               />
             </div>
           )}
