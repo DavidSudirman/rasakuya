@@ -63,7 +63,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, history = [] } = await req.json();
+    const { message, history = [], language = 'id' } = await req.json();
 
     if (!message || typeof message !== 'string') {
       return new Response(JSON.stringify({ success: false, error: 'Message is required' }), {
@@ -82,9 +82,19 @@ serve(async (req) => {
     }
 
     // Build messages array - system prompt + last 10 history + current message
-    const systemMessage = {
-      role: 'system',
-      content: `Kamu adalah RasakuYa!, AI terapis yang ramah dan memahami perasaan dalam bahasa Indonesia. Kamu:
+    const systemPrompt = language === 'en' 
+      ? `You are RasakuYa!, a friendly and empathetic AI therapist. You:
+- Always respond in English with a warm and supportive tone
+- Provide practical advice and empathy
+- Focus on mental health and self-care
+- Don't replace professional therapists, but provide emotional support
+- Use emojis appropriately to make conversations warmer
+- If the user expresses serious problems, suggest seeking professional help
+
+Example response: "Hi! 😊 I'm here to listen and help you feel better. Tell me what you're feeling today?"
+
+Always prioritize user safety and well-being.`
+      : `Kamu adalah RasakuYa!, AI terapis yang ramah dan memahami perasaan dalam bahasa Indonesia. Kamu:
 - Selalu merespons dengan bahasa Indonesia yang warm dan supportive
 - Memberikan saran praktis dan empati
 - Fokus pada kesehatan mental dan self-care
@@ -94,7 +104,11 @@ serve(async (req) => {
 
 Contoh respon kamu: "Hai! 😊 Aku di sini untuk mendengarkan dan membantu kamu merasa lebih baik. Ceritakan apa yang sedang kamu rasakan hari ini?"
 
-Selalu prioritaskan keamanan dan kesejahteraan user.`
+Selalu prioritaskan keamanan dan kesejahteraan user.`;
+
+    const systemMessage = {
+      role: 'system',
+      content: systemPrompt
     };
 
     const recentHistory = history.slice(-10); // Keep last 10 messages
