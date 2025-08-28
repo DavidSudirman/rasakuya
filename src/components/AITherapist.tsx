@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Send, Bot, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
@@ -22,7 +21,6 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { t, language } = useLanguage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -86,8 +84,7 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
         const { data, error } = await supabase.functions.invoke('chat-openrouter', {
           body: {
             message: messageWithContext,
-            history: history,
-            language: language
+            history: history
           }
         });
 
@@ -99,8 +96,8 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
           // Handle rate limiting specifically
           if (data.error.includes('temporarily busy')) {
             toast({
-              title: t('therapist.service_busy'),
-              description: t('therapist.service_busy_desc'),
+              title: "Layanan Sibuk",
+              description: "Layanan AI sedang sibuk sementara. Silakan coba lagi dalam beberapa saat.",
               variant: "destructive"
             });
             return;
@@ -119,16 +116,16 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
         
       } catch (error) {
         console.error('Error sending message:', error);
-        let errorMessage = t('therapist.failed_send');
+        let errorMessage = "Gagal mengirim pesan. Silakan coba lagi.";
         
         if (error.message.includes('temporarily busy')) {
-          errorMessage = t('therapist.service_busy_desc');
+          errorMessage = "Layanan AI sedang sibuk sementara. Silakan coba lagi dalam beberapa saat.";
         } else if (error.message.includes('rate limit')) {
-          errorMessage = t('therapist.rate_limit');
+          errorMessage = "Terlalu banyak permintaan. Silakan tunggu sebentar sebelum mencoba lagi.";
         }
         
         toast({
-          title: t('therapist.error'),
+          title: "Kesalahan",
           description: errorMessage,
           variant: "destructive"
         });
@@ -148,8 +145,8 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
     <Card className="p-6">
       <div className="text-center mb-6">
         <Bot className="h-8 w-8 text-primary mx-auto mb-2" />
-        <h2 className="text-xl font-semibold">{t('therapist.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('therapist.subtitle')}</p>
+        <h2 className="text-xl font-semibold">Terapis AI</h2>
+        <p className="text-sm text-muted-foreground">Didukung oleh AI aman - tidak perlu API key</p>
       </div>
 
       <div className="space-y-4">
@@ -158,7 +155,7 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>{t('therapist.greeting')}</p>
+              <p>Hai! Aku di sini untuk mendengarkan dan membantu. Ceritakan apa yang sedang kamu rasakan hari ini.</p>
             </div>
           ) : (
             messages.map((message, index) => (
@@ -178,7 +175,7 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
                   }`}>
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     <p className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', { 
+                      {message.timestamp.toLocaleTimeString('id-ID', { 
                         hour: '2-digit', 
                         minute: '2-digit' 
                       })}
@@ -212,7 +209,7 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={t('therapist.placeholder')}
+            placeholder="Bagikan perasaan atau pikiranmu..."
             className="min-h-[80px] resize-none"
             disabled={loading}
           />

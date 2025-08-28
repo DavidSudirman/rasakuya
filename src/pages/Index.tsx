@@ -7,11 +7,9 @@ import { MoodCalendar } from '@/components/MoodCalendar';
 import { MoodPrediction } from '@/components/MoodPrediction';
 import { MoodStats } from '@/components/MoodStats';
 import { AITherapist } from '@/components/AITherapist';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { Heart, Sparkles, Calendar, BarChart3, LogOut, User, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MoodEntry {
@@ -32,7 +30,6 @@ const Index = () => {
   const [isEditingToday, setIsEditingToday] = useState(false);
   const { toast } = useToast();
   const { user, signOut, loading: authLoading } = useAuth();
-  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   // Check authentication and load mood entries
@@ -70,8 +67,8 @@ const Index = () => {
     } catch (error) {
       console.error('Error loading mood entries:', error);
       toast({
-        title: t('common.error'),
-        description: t('mood.load_error'),
+        title: "Error",
+        description: "Gagal memuat data mood.",
         variant: "destructive"
       });
     } finally {
@@ -127,14 +124,14 @@ const Index = () => {
       setIsEditingToday(false);
       
       toast({
-        title: t('mood.saved'),
-        description: t('mood.saved_desc').replace('{date}', new Date(selectedDate).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')),
+        title: "Mood tersimpan!",
+        description: `Mood untuk ${new Date(selectedDate).toLocaleDateString('id-ID')} berhasil disimpan.`,
       });
     } catch (error) {
       console.error('Error saving mood:', error);
       toast({
-        title: t('common.error'),
-        description: t('mood.save_error'),
+        title: "Error",
+        description: "Gagal menyimpan mood. Silakan coba lagi.",
         variant: "destructive"
       });
     }
@@ -151,7 +148,7 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center">
         <div className="text-center">
           <Heart className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">{t('common.loading')}</p>
+          <p className="text-muted-foreground">Memuat RasakuYa!...</p>
         </div>
       </div>
     );
@@ -171,7 +168,7 @@ const Index = () => {
               <Heart className="h-8 w-8 text-pink-300" />
               <div>
                 <h1 className="text-3xl font-bold">RasakuYa!</h1>
-                <p className="text-sm opacity-90">{t('header.tagline')}</p>
+                <p className="text-sm opacity-90">Lacak perasaanmu, prediksi hari esok</p>
               </div>
             </div>
             
@@ -179,10 +176,9 @@ const Index = () => {
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">
-                  {t('header.greeting').replace('{name}', user.user_metadata?.display_name || user.email?.split('@')[0] || 'User')}
+                  Halo, {user.user_metadata?.display_name || user.email?.split('@')[0] || 'Pengguna'}!
                 </span>
               </div>
-              <LanguageSelector />
               <Button
                 variant="outline"
                 size="sm"
@@ -190,7 +186,7 @@ const Index = () => {
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{t('header.logout')}</span>
+                <span className="hidden sm:inline">Keluar</span>
               </Button>
             </div>
           </div>
@@ -202,11 +198,11 @@ const Index = () => {
         <div className="flex justify-center mb-8">
           <div className="flex bg-card rounded-lg p-1 shadow-sm">
             {[
-              { id: 'tracker', label: t('nav.tracker'), icon: Heart },
-              { id: 'calendar', label: t('nav.calendar'), icon: Calendar },
-              { id: 'stats', label: t('nav.stats'), icon: BarChart3 },
-              { id: 'prediction', label: t('nav.prediction'), icon: Sparkles },
-              { id: 'therapist', label: t('nav.therapist'), icon: Bot }
+              { id: 'tracker', label: 'Tracker', icon: Heart },
+              { id: 'calendar', label: 'Kalender', icon: Calendar },
+              { id: 'stats', label: 'Statistik', icon: BarChart3 },
+              { id: 'prediction', label: 'Prediksi AI', icon: Sparkles },
+              { id: 'therapist', label: 'AI Therapist', icon: Bot }
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -235,21 +231,21 @@ const Index = () => {
             <div className="space-y-6">
               <Card className="p-6">
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-semibold mb-2">{t('tracker.title')}</h2>
+                  <h2 className="text-2xl font-semibold mb-2">Catat Perasaanmu Hari Ini</h2>
                   <p className="text-muted-foreground">
-                    {t('tracker.date').replace('{date}', selectedDate ? new Date(selectedDate).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
+                    Tanggal: {selectedDate ? new Date(selectedDate).toLocaleDateString('id-ID', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    }) : '')}
+                    }) : ''}
                   </p>
                 </div>
 
                 {currentMoodEntry && !isEditingToday ? (
                   <div className="text-center space-y-4">
                     <div className="text-6xl">{currentMoodEntry.emoji}</div>
-                    <p className="text-lg font-medium">{t('tracker.already_logged')}</p>
+                    <p className="text-lg font-medium">Kamu sudah mencatat mood untuk hari ini!</p>
                     <div className="flex gap-3 justify-center">
                       <Button 
                         variant="outline" 
@@ -259,10 +255,10 @@ const Index = () => {
                           setIsEditingToday(true);
                         }}
                       >
-                        {t('tracker.edit_today')}
+                        Ubah Mood Hari Ini
                       </Button>
                       <Button onClick={() => setActiveTab('calendar')}>
-                        {t('tracker.view_calendar')}
+                        Lihat Kalender Mood
                       </Button>
                     </div>
                   </div>
@@ -279,7 +275,7 @@ const Index = () => {
                     {selectedMood && (
                       <div className="text-center space-y-3">
                         <Button onClick={saveMood} size="lg" className="px-8">
-                          {isEditingToday ? t('tracker.update_mood') : t('tracker.save_mood')}
+                          {isEditingToday ? 'Update Mood' : 'Simpan Mood'}
                         </Button>
                         {isEditingToday && (
                           <Button 
@@ -291,7 +287,7 @@ const Index = () => {
                               setIsEditingToday(false);
                             }}
                           >
-                            {t('tracker.cancel')}
+                            Batal
                           </Button>
                         )}
                       </div>
@@ -315,7 +311,7 @@ const Index = () => {
           {activeTab === 'stats' && (
             <div className="space-y-6">
               <Card className="p-6">
-                <h2 className="text-2xl font-semibold mb-6 text-center">{t('stats.title')}</h2>
+                <h2 className="text-2xl font-semibold mb-6 text-center">Statistik Mood</h2>
                 <MoodStats moodEntries={moodEntries} />
               </Card>
             </div>
@@ -327,10 +323,10 @@ const Index = () => {
               {moodEntries.length < 3 && (
                 <Card className="p-6 text-center">
                   <p className="text-muted-foreground mb-4">
-                    {t('tracker.need_3_days')}
+                    Catat mood setidaknya 3 hari untuk mendapatkan prediksi yang lebih akurat!
                   </p>
                   <Button onClick={() => setActiveTab('tracker')}>
-                    {t('tracker.start_logging')}
+                    Mulai Mencatat Mood
                   </Button>
                 </Card>
               )}
