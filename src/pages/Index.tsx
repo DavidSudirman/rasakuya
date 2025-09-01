@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MoodSelector } from '@/components/MoodSelector';
 import { MoodCalendar } from '@/components/MoodCalendar';
 import { MoodPrediction } from '@/components/MoodPrediction';
 import { MoodStats } from '@/components/MoodStats';
 import { AITherapist } from '@/components/AITherapist';
 import { LanguageSelector } from '@/components/LanguageSelector';
-import { Heart, Sparkles, Calendar, BarChart3, LogOut, User, Bot } from 'lucide-react';
+import { Heart, Sparkles, Calendar, BarChart3, LogOut, User, Bot, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface MoodEntry {
   date: string;
@@ -27,7 +31,7 @@ const Index = () => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [moodDescription, setMoodDescription] = useState<string>('');
   const [energyLevel, setEnergyLevel] = useState<number>(5);
-  const [selectedDate, setSelectedDate] = useState<string | null>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'tracker' | 'calendar' | 'stats' | 'prediction' | 'therapist'>('tracker');
   const [loading, setLoading] = useState(true);
@@ -103,7 +107,8 @@ const Index = () => {
     if (!selectedMood || !selectedDate || !user) return;
 
     try {
-      const loggedAt = new Date(selectedDate + 'T12:00:00Z').toISOString();
+      const dateString = selectedDate.toISOString().split('T')[0];
+      const loggedAt = new Date(dateString + 'T12:00:00Z').toISOString();
       
       const { data, error } = await supabase
         .from('mood_logs')
@@ -132,7 +137,7 @@ const Index = () => {
       
       toast({
         title: t('mood.saved'),
-        description: t('mood.saved_desc').replace('{date}', new Date(selectedDate).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')),
+        description: t('mood.saved_desc').replace('{date}', selectedDate.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US')),
       });
     } catch (error) {
       console.error('Error saving mood:', error);
@@ -148,7 +153,8 @@ const Index = () => {
     return moodEntries.find(entry => entry.date === date);
   };
 
-  const currentMoodEntry = selectedDate ? getCurrentMoodForDate(selectedDate) : null;
+  const selectedDateString = selectedDate.toISOString().split('T')[0];
+  const currentMoodEntry = getCurrentMoodForDate(selectedDateString);
 
   if (authLoading || loading) {
     return (
@@ -237,16 +243,45 @@ const Index = () => {
         <div className="max-w-4xl mx-auto space-y-8">
           {activeTab === 'tracker' && (
             <div className="space-y-6">
-              <Card className="p-6">
+                <Card className="p-6">
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-semibold mb-2">{t('tracker.title')}</h2>
+                  
+                  {/* Date Picker */}
+                  <div className="flex justify-center mb-4">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-[240px] justify-start text-left font-normal",
+                            !selectedDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="center">
+                        <CalendarComponent
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={(date) => date && setSelectedDate(date)}
+                          disabled={(date) => date > new Date()}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
                   <p className="text-muted-foreground">
-                    {t('tracker.date').replace('{date}', selectedDate ? new Date(selectedDate).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
+                    {t('tracker.date').replace('{date}', selectedDate.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    }) : '')}
+                    }))}
                   </p>
                 </div>
 
@@ -308,10 +343,10 @@ const Index = () => {
 
           {activeTab === 'calendar' && (
             <div className="space-y-6">
-              <MoodCalendar 
+               <MoodCalendar 
                 moodEntries={moodEntries}
-                onDateSelect={setSelectedDate}
-                selectedDate={selectedDate}
+                onDateSelect={(dateString) => setSelectedDate(new Date(dateString))}
+                selectedDate={selectedDateString}
                 onMoodUpdate={loadMoodEntries}
               />
             </div>
