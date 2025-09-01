@@ -190,22 +190,24 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
               const moodEntry = getMoodForDate(day);
               const isSelected = selectedDate === dateString;
               const isToday = day.toDateString() === new Date().toDateString();
+              const isFuture = day > new Date();
               
               return (
                 <Dialog key={index}>
                   <DialogTrigger asChild>
-                    <button
-                      className={`
-                        h-12 w-full rounded-md text-sm font-medium transition-all
-                        ${!isCurrentMonth ? 'text-muted-foreground opacity-40' : ''}
-                        ${isSelected ? 'bg-primary text-primary-foreground' : ''}
-                        ${isToday && !isSelected ? 'bg-accent border border-primary/50' : ''}
-                        ${!isSelected && !isToday ? 'hover:bg-accent' : ''}
-                        ${moodEntry ? moodOptions[moodEntry.mood]?.color + ' border-2 border-primary/30' : ''}
-                        flex items-center justify-center relative
-                      `}
-                      onClick={() => onDateSelect(dateString)}
-                      disabled={!isCurrentMonth}
+                     <button
+                       className={`
+                         h-12 w-full rounded-md text-sm font-medium transition-all
+                         ${!isCurrentMonth ? 'text-muted-foreground opacity-40' : ''}
+                         ${isFuture && isCurrentMonth ? 'text-muted-foreground opacity-50 cursor-not-allowed' : ''}
+                         ${isSelected ? 'bg-primary text-primary-foreground' : ''}
+                         ${isToday && !isSelected ? 'bg-accent border border-primary/50' : ''}
+                         ${!isSelected && !isToday && !isFuture ? 'hover:bg-accent' : ''}
+                         ${moodEntry ? moodOptions[moodEntry.mood]?.color + ' border-2 border-primary/30' : ''}
+                         flex items-center justify-center relative
+                       `}
+                       onClick={() => !isFuture && onDateSelect(dateString)}
+                       disabled={!isCurrentMonth || isFuture}
                     >
                       <span>{day.getDate()}</span>
                       {moodEntry && (
@@ -216,7 +218,7 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
                     </button>
                   </DialogTrigger>
                   
-                  {moodEntry && (
+                  {moodEntry && !isFuture && (
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader>
                         <DialogTitle className="flex items-center justify-between">
