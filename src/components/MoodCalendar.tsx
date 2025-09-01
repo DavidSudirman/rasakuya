@@ -26,7 +26,6 @@ interface MoodCalendarProps {
   onDateSelect: (date: string) => void;
   selectedDate: string | null;
   onMoodUpdate?: () => void;
-  onTabSwitch?: (tab: string) => void;
 }
 
 const moodOptions: { [key: string]: { name: { en: string; id: string }; emoji: string; color: string } } = {
@@ -42,8 +41,7 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
   moodEntries, 
   onDateSelect, 
   selectedDate,
-  onMoodUpdate,
-  onTabSwitch 
+  onMoodUpdate 
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editingMood, setEditingMood] = useState<string | null>(null);
@@ -206,13 +204,7 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
                         ${moodEntry ? moodOptions[moodEntry.mood]?.color + ' border-2 border-primary/30' : ''}
                         flex items-center justify-center relative
                       `}
-                      onClick={() => {
-                        onDateSelect(dateString);
-                        // If no mood entry exists for this date and it's editable, switch to tracker
-                        if (!moodEntry && isEditableDate(day)) {
-                          onTabSwitch?.('tracker');
-                        }
-                      }}
+                      onClick={() => onDateSelect(dateString)}
                       disabled={!isCurrentMonth}
                     >
                       <span>{day.getDate()}</span>
