@@ -348,6 +348,7 @@ const Index = () => {
                 onDateSelect={(dateString) => setSelectedDate(new Date(dateString))}
                 selectedDate={selectedDateString}
                 onMoodUpdate={loadMoodEntries}
+                onTabSwitch={(tab) => setActiveTab(tab as any)}
               />
             </div>
           )}
