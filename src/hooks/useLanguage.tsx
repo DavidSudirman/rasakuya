@@ -23,6 +23,29 @@ const translations = {
     'nav.stats': 'Statistics',
     'nav.prediction': 'AI Prediction',
     'nav.therapist': 'AI Therapist',
+    'nav.payment': 'Payment',
+
+    // Account Dropdown
+    'account.profile': 'Profile',
+    'account.settings': 'Settings',
+    'account.payment': 'Payment Options',
+
+    // Pricing
+    'pricing.title': 'Choose Your Plan',
+    'pricing.subtitle': 'Unlock premium features for better mental health tracking',
+    'pricing.popular': 'Popular',
+    'pricing.free.name': 'Free Plan',
+    'pricing.free.price': 'Free',
+    'pricing.free.feature1': 'Access to mood tracker',
+    'pricing.free.feature2': 'Access to mood calendar',
+    'pricing.free.feature3': 'Access to AI basic predictions and feedback',
+    'pricing.free.feature4': 'Access to ARUNA AI therapist',
+    'pricing.free.button': 'Current Plan',
+    'pricing.premium.name': 'Premium Plan',
+    'pricing.premium.feature1': 'Advanced mood reports (analysis and improvements)',
+    'pricing.premium.feature2': 'Customize their GUI',
+    'pricing.premium.feature3': 'More personalized AI therapists: LUMA, SAHATI',
+    'pricing.premium.button': 'Upgrade to Premium',
     
     // Mood Tracker
     'tracker.title': 'Record Your Feelings Today',
@@ -79,6 +102,29 @@ const translations = {
     'nav.stats': 'Statistik',
     'nav.prediction': 'Prediksi AI',
     'nav.therapist': 'AI Therapist',
+    'nav.payment': 'Pembayaran',
+
+    // Account Dropdown
+    'account.profile': 'Profil',
+    'account.settings': 'Pengaturan',
+    'account.payment': 'Opsi Pembayaran',
+
+    // Pricing
+    'pricing.title': 'Pilih Paket Anda',
+    'pricing.subtitle': 'Buka fitur premium untuk pelacakan kesehatan mental yang lebih baik',
+    'pricing.popular': 'Populer',
+    'pricing.free.name': 'Paket Gratis',
+    'pricing.free.price': 'Gratis',
+    'pricing.free.feature1': 'Akses ke mood tracker',
+    'pricing.free.feature2': 'Akses ke kalender mood',
+    'pricing.free.feature3': 'Akses ke prediksi dasar dan feedback AI',
+    'pricing.free.feature4': 'Akses ke ARUNA AI therapist',
+    'pricing.free.button': 'Paket Saat Ini',
+    'pricing.premium.name': 'Paket Premium',
+    'pricing.premium.feature1': 'Laporan mood canggih (analisis dan perbaikan)',
+    'pricing.premium.feature2': 'Kustomisasi GUI mereka',
+    'pricing.premium.feature3': 'AI therapist yang lebih personal: LUMA, SAHATI',
+    'pricing.premium.button': 'Upgrade ke Premium',
     
     // Mood Tracker
     'tracker.title': 'Catat Perasaanmu Hari Ini',
