@@ -13,7 +13,7 @@ import { AITherapist } from '@/components/AITherapist';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { PricingPlans } from '@/components/PricingPlans';
 import { AccountDropdown } from '@/components/AccountDropdown';
-import { Heart, Sparkles, Calendar, BarChart3, LogOut, User, Bot, CalendarIcon } from 'lucide-react';
+import { Heart, Sparkles, Calendar, BarChart3, LogOut, User, Bot, CalendarIcon, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -35,7 +35,7 @@ const Index = () => {
   const [energyLevel, setEnergyLevel] = useState<number>(5);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<'tracker' | 'calendar' | 'stats' | 'prediction' | 'therapist'>('tracker');
+  const [activeTab, setActiveTab] = useState<'tracker' | 'calendar' | 'stats' | 'prediction' | 'therapist' | 'payment'>('tracker');
   const [loading, setLoading] = useState(true);
   const [isEditingToday, setIsEditingToday] = useState(false);
   const { toast } = useToast();
@@ -188,7 +188,7 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              <AccountDropdown />
+              <AccountDropdown onNavigateToPayment={() => setActiveTab('payment')} />
               <LanguageSelector />
             </div>
           </div>
@@ -204,7 +204,8 @@ const Index = () => {
               { id: 'calendar', label: t('nav.calendar'), icon: Calendar },
               { id: 'stats', label: t('nav.stats'), icon: BarChart3 },
               { id: 'prediction', label: t('nav.prediction'), icon: Sparkles },
-              { id: 'therapist', label: t('nav.therapist'), icon: Bot }
+              { id: 'therapist', label: t('nav.therapist'), icon: Bot },
+              { id: 'payment', label: t('nav.payment'), icon: CreditCard }
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -371,6 +372,11 @@ const Index = () => {
             </div>
           )}
 
+          {activeTab === 'payment' && (
+            <div className="space-y-6">
+              <PricingPlans />
+            </div>
+          )}
         </div>
       </div>
     </div>
