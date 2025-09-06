@@ -40,7 +40,6 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [isEditingToday, setIsEditingToday] = useState(false);
   const [showVFX, setShowVFX] = useState(false);
-  const [vfxEmoji, setVfxEmoji] = useState('😊');
   const { toast } = useToast();
   const { user, signOut, loading: authLoading } = useAuth();
   const { t, language } = useLanguage();
@@ -137,15 +136,12 @@ const Index = () => {
       // Reload mood entries to get the updated data
       await loadMoodEntries();
       
-      // Store emoji for VFX before clearing selectedMood
-      setVfxEmoji(moodEmoji);
-      
       setSelectedMood(null);
       setMoodDescription('');
       setEnergyLevel(5);
       setIsEditingToday(false);
       
-      // Trigger VFX effect with stored emoji
+      // Trigger VFX effect
       setShowVFX(true);
       
       toast({
@@ -389,7 +385,6 @@ const Index = () => {
       <MoodVFX 
         trigger={showVFX}
         onComplete={() => setShowVFX(false)}
-        moodEmoji={vfxEmoji}
       />
     </div>
   );
