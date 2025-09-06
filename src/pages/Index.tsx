@@ -13,6 +13,7 @@ import { AITherapist } from '@/components/AITherapist';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { PricingPlans } from '@/components/PricingPlans';
 import { AccountDropdown } from '@/components/AccountDropdown';
+import { MoodVFX } from '@/components/MoodVFX';
 import { Heart, Sparkles, Calendar, BarChart3, LogOut, User, Bot, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,6 +39,8 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<'tracker' | 'calendar' | 'stats' | 'prediction' | 'therapist'>('tracker');
   const [loading, setLoading] = useState(true);
   const [isEditingToday, setIsEditingToday] = useState(false);
+  const [showVFX, setShowVFX] = useState(false);
+  const [vfxEmoji, setVfxEmoji] = useState('😊');
   const { toast } = useToast();
   const { user, signOut, loading: authLoading } = useAuth();
   const { t, language } = useLanguage();
@@ -111,6 +114,7 @@ const Index = () => {
     try {
       const dateString = selectedDate.toISOString().split('T')[0];
       const loggedAt = new Date(dateString + 'T12:00:00Z').toISOString();
+      const moodEmoji = getMoodEmoji(selectedMood); // Store emoji before clearing state
       
       const { data, error } = await supabase
         .from('mood_logs')
@@ -132,10 +136,17 @@ const Index = () => {
 
       // Reload mood entries to get the updated data
       await loadMoodEntries();
+      
+      // Store emoji for VFX before clearing selectedMood
+      setVfxEmoji(moodEmoji);
+      
       setSelectedMood(null);
       setMoodDescription('');
       setEnergyLevel(5);
       setIsEditingToday(false);
+      
+      // Trigger VFX effect with stored emoji
+      setShowVFX(true);
       
       toast({
         title: t('mood.saved'),
@@ -373,6 +384,13 @@ const Index = () => {
 
         </div>
       </div>
+      
+      {/* VFX Effect */}
+      <MoodVFX 
+        trigger={showVFX}
+        onComplete={() => setShowVFX(false)}
+        moodEmoji={vfxEmoji}
+      />
     </div>
   );
 };
