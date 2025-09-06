@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { User, Settings, CreditCard, LogOut, ChevronDown } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -11,11 +11,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface AccountDropdownProps {
-  onNavigateToPayment: () => void;
-}
+interface AccountDropdownProps {}
 
-export const AccountDropdown: React.FC<AccountDropdownProps> = ({ onNavigateToPayment }) => {
+export const AccountDropdown: React.FC<AccountDropdownProps> = () => {
   const { t } = useLanguage();
   const { user, signOut } = useAuth();
 
@@ -43,11 +41,6 @@ export const AccountDropdown: React.FC<AccountDropdownProps> = ({ onNavigateToPa
         <DropdownMenuItem className="cursor-pointer">
           <Settings className="h-4 w-4 mr-2" />
           {t('account.settings')}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer" onClick={onNavigateToPayment}>
-          <CreditCard className="h-4 w-4 mr-2" />
-          {t('account.payment')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer text-red-600" onClick={signOut}>
