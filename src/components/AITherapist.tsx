@@ -2,10 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
-import { Send, Bot, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
+import { Send, Bot, User, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { ArunaPreferences } from './ArunaPreferences';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,8 +24,11 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [arunaPreferences, setArunaPreferences] = useState<string>('');
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const { toast } = useToast();
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -32,6 +38,30 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    loadArunaPreferences();
+  }, [user]);
+
+  const loadArunaPreferences = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('aruna_preferences')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data?.aruna_preferences) {
+        setArunaPreferences(data.aruna_preferences);
+      }
+    } catch (error) {
+      console.error('Error loading ARUNA preferences:', error);
+    }
+  };
 
   const getMoodContext = () => {
     const recentMoods = moodEntries.slice(-7); // Last 7 days
@@ -80,8 +110,12 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
           content: msg.content
         }));
 
-        // Add mood context to the message
-        const messageWithContext = `Context: ${moodContext}\n\nUser message: ${currentInput}`;
+        // Add mood context and ARUNA preferences to the message
+        let messageWithContext = `Context: ${moodContext}\n\nUser message: ${currentInput}`;
+        
+        if (arunaPreferences) {
+          messageWithContext = `ARUNA Preferences: ${arunaPreferences}\n\n${messageWithContext}`;
+        }
 
         const { data, error } = await supabase.functions.invoke('chat-openrouter', {
           body: {
@@ -147,7 +181,22 @@ export const AITherapist: React.FC<AITherapistProps> = ({ moodEntries }) => {
   return (
     <Card className="p-6">
       <div className="text-center mb-6">
-        <Bot className="h-8 w-8 text-primary mx-auto mb-2" />
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Bot className="h-8 w-8 text-primary" />
+          <Dialog open={preferencesOpen} onOpenChange={setPreferencesOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <ArunaPreferences onClose={() => {
+                setPreferencesOpen(false);
+                loadArunaPreferences(); // Refresh preferences after closing
+              }} />
+            </DialogContent>
+          </Dialog>
+        </div>
         <h2 className="text-xl font-semibold">{t('therapist.title')}</h2>
         <p className="text-sm text-muted-foreground">{t('therapist.subtitle')}</p>
       </div>

@@ -52,6 +52,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          aruna_preferences: string | null
           avatar_url: string | null
           created_at: string
           id: string
@@ -60,6 +61,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aruna_preferences?: string | null
           avatar_url?: string | null
           created_at?: string
           id?: string
@@ -68,6 +70,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aruna_preferences?: string | null
           avatar_url?: string | null
           created_at?: string
           id?: string
