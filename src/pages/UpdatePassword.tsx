@@ -18,57 +18,68 @@ const UpdatePassword = () => {
   useEffect(() => {
     let redirectTimeout: NodeJS.Timeout;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event, 'Session:', session);
-      
-      if (event === 'PASSWORD_RECOVERY' && session) {
-        console.log('Recovery session established:', session);
-        setRecoverySessionReady(true);
-        // Clean the URL after recovery session is established
-        setTimeout(() => {
+    const processRecovery = async () => {
+      try {
+        // Try to exchange code for session first (recommended approach)
+        const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+        
+        if (!error) {
+          console.log('Recovery session established via exchangeCodeForSession');
+          setRecoverySessionReady(true);
+          // Clean the URL
           window.history.replaceState({}, document.title, window.location.pathname);
-        }, 100);
-      } else if (event === 'SIGNED_OUT') {
-        setRecoverySessionReady(false);
-      } else if (event === 'INITIAL_SESSION' && !session && window.location.hash) {
-        // Process recovery tokens if present in hash
-        const params = new URLSearchParams(window.location.hash.slice(1));
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        const type = params.get('type');
-        
-        console.log('Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
-        
-        if (type === 'recovery' && accessToken && refreshToken) {
-          try {
-            await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
-          } catch (error) {
-            console.error('Error setting session:', error);
-          }
+          return;
         }
-      }
-    });
-
-    // If no recovery happens within 5 seconds and no hash, redirect
-    redirectTimeout = setTimeout(() => {
-      if (!recoverySessionReady && !window.location.hash) {
+        
+        console.log('No code exchange needed, checking for existing session');
+        
+        // Check if there's already a valid session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('Existing session found:', session);
+          setRecoverySessionReady(true);
+          return;
+        }
+        
+        // If no session after 3 seconds, show error and redirect
+        setTimeout(() => {
+          toast({
+            title: 'Link tidak valid',
+            description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
+            variant: 'destructive',
+          });
+          navigate('/auth/forgot-password');
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Recovery processing error:', error);
         toast({
-          title: 'Link tidak valid',
-          description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
+          title: 'Error',
+          description: 'Terjadi kesalahan saat memproses link reset password.',
           variant: 'destructive',
         });
         navigate('/auth/forgot-password');
       }
-    }, 5000);
+    };
+
+    processRecovery();
+
+    // Set up auth state listener for any auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event, 'Session:', !!session);
+      
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        setRecoverySessionReady(true);
+      } else if (event === 'SIGNED_OUT') {
+        setRecoverySessionReady(false);
+      }
+    });
 
     return () => {
       subscription.unsubscribe();
       if (redirectTimeout) clearTimeout(redirectTimeout);
     };
-  }, [navigate, toast, recoverySessionReady]);
+  }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
