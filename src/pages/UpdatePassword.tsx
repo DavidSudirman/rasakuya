@@ -18,7 +18,7 @@ const UpdatePassword = () => {
   useEffect(() => {
     let redirectTimeout: NodeJS.Timeout;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth event:', event, 'Session:', session);
       
       if (event === 'PASSWORD_RECOVERY' && session) {
@@ -30,10 +30,29 @@ const UpdatePassword = () => {
         }, 100);
       } else if (event === 'SIGNED_OUT') {
         setRecoverySessionReady(false);
+      } else if (event === 'INITIAL_SESSION' && !session && window.location.hash) {
+        // Process recovery tokens if present in hash
+        const params = new URLSearchParams(window.location.hash.slice(1));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const type = params.get('type');
+        
+        console.log('Hash params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+        
+        if (type === 'recovery' && accessToken && refreshToken) {
+          try {
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+          } catch (error) {
+            console.error('Error setting session:', error);
+          }
+        }
       }
     });
 
-    // If no recovery happens within 3 seconds, redirect
+    // If no recovery happens within 5 seconds and no hash, redirect
     redirectTimeout = setTimeout(() => {
       if (!recoverySessionReady && !window.location.hash) {
         toast({
@@ -43,7 +62,7 @@ const UpdatePassword = () => {
         });
         navigate('/auth/forgot-password');
       }
-    }, 3000);
+    }, 5000);
 
     return () => {
       subscription.unsubscribe();
