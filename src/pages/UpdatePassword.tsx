@@ -15,33 +15,53 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const initRecoverySession = async () => {
-      try {
-        // Must be present for recovery links
-        if (!window.location.hash) throw new Error('No hash');
+    let timeoutId: NodeJS.Timeout;
 
-        // Make sure it's a recovery link
-        const params = new URLSearchParams(window.location.hash.slice(1));
-        const type = params.get('type');
-        if (type !== 'recovery') throw new Error('Not a recovery link');
-
-        // Process the hash and get session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session) throw error || new Error('No session');
-
-        // Optional: clean the URL so the hash with token disappears
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch {
+    const handleRecoveryLink = () => {
+      // Must be present for recovery links
+      if (!window.location.hash) {
         toast({
           title: 'Link tidak valid',
           description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
           variant: 'destructive',
         });
         navigate('/auth/forgot-password');
+        return;
       }
+
+      // Make sure it's a recovery link
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const type = params.get('type');
+      if (type !== 'recovery') {
+        toast({
+          title: 'Link tidak valid',
+          description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
+          variant: 'destructive',
+        });
+        navigate('/auth/forgot-password');
+        return;
+      }
+
+      // Clean the URL so the hash with token disappears
+      window.history.replaceState({}, document.title, window.location.pathname);
     };
 
-    initRecoverySession();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // Password recovery session established
+        handleRecoveryLink();
+      } else if (event === 'SIGNED_OUT') {
+        // Handle sign out if needed
+      }
+    });
+
+    // Also handle the case where tokens are in hash on page load
+    handleRecoveryLink();
+
+    return () => {
+      subscription.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
