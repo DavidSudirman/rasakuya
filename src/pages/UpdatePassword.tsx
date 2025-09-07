@@ -17,15 +17,35 @@ const UpdatePassword = () => {
   useEffect(() => {
     const exchangeCodeForSession = async () => {
       try {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.hash);
+        // Parse the hash to get access_token for new format
+        const hash = window.location.hash;
+        const params = new URLSearchParams(hash.replace('#', ''));
+        const accessToken = params.get('access_token');
         
-        if (error) {
-          toast({
-            title: "Link tidak valid",
-            description: "Link reset password tidak valid atau sudah kedaluwarsa.",
-            variant: "destructive"
-          });
-          navigate('/auth/forgot-password');
+        if (accessToken) {
+          // Use the access token directly with exchangeCodeForSession
+          const { data, error } = await supabase.auth.exchangeCodeForSession(hash);
+          
+          if (error) {
+            toast({
+              title: "Link tidak valid",
+              description: "Link reset password tidak valid atau sudah kedaluwarsa.",
+              variant: "destructive"
+            });
+            navigate('/auth/forgot-password');
+          }
+        } else {
+          // Fallback to old hash format
+          const { data, error } = await supabase.auth.exchangeCodeForSession(hash);
+          
+          if (error) {
+            toast({
+              title: "Link tidak valid",
+              description: "Link reset password tidak valid atau sudah kedaluwarsa.",
+              variant: "destructive"
+            });
+            navigate('/auth/forgot-password');
+          }
         }
       } catch (error) {
         toast({
