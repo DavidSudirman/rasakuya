@@ -15,23 +15,20 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    const handleRecoveryLink = () => {
-      // Must be present for recovery links
-      if (!window.location.hash) {
-        toast({
-          title: 'Link tidak valid',
-          description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
-          variant: 'destructive',
-        });
-        navigate('/auth/forgot-password');
-        return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // Clean the URL after recovery session is established
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (event === 'SIGNED_OUT') {
+        // Handle sign out if needed
       }
+    });
 
-      // Make sure it's a recovery link
+    // Check if this is a recovery link on page load
+    if (window.location.hash) {
       const params = new URLSearchParams(window.location.hash.slice(1));
       const type = params.get('type');
+      
       if (type !== 'recovery') {
         toast({
           title: 'Link tidak valid',
@@ -39,28 +36,20 @@ const UpdatePassword = () => {
           variant: 'destructive',
         });
         navigate('/auth/forgot-password');
-        return;
       }
-
-      // Clean the URL so the hash with token disappears
-      window.history.replaceState({}, document.title, window.location.pathname);
-    };
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // Password recovery session established
-        handleRecoveryLink();
-      } else if (event === 'SIGNED_OUT') {
-        // Handle sign out if needed
-      }
-    });
-
-    // Also handle the case where tokens are in hash on page load
-    handleRecoveryLink();
+      // If it's a recovery link, let Supabase handle it automatically
+    } else {
+      // No hash means no recovery tokens
+      toast({
+        title: 'Link tidak valid',
+        description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
+        variant: 'destructive',
+      });
+      navigate('/auth/forgot-password');
+    }
 
     return () => {
       subscription.unsubscribe();
-      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [navigate, toast]);
 
