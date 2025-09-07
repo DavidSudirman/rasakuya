@@ -11,49 +11,45 @@ import { useToast } from '@/hooks/use-toast';
 const UpdatePassword = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [recoverySessionReady, setRecoverySessionReady] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if this is a recovery link on page load
-    if (window.location.hash) {
-      const params = new URLSearchParams(window.location.hash.slice(1));
-      const type = params.get('type');
+    let redirectTimeout: NodeJS.Timeout;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event, 'Session:', session);
       
-      if (type !== 'recovery') {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        console.log('Recovery session established:', session);
+        setRecoverySessionReady(true);
+        // Clean the URL after recovery session is established
+        setTimeout(() => {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }, 100);
+      } else if (event === 'SIGNED_OUT') {
+        setRecoverySessionReady(false);
+      }
+    });
+
+    // If no recovery happens within 3 seconds, redirect
+    redirectTimeout = setTimeout(() => {
+      if (!recoverySessionReady && !window.location.hash) {
         toast({
           title: 'Link tidak valid',
           description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
           variant: 'destructive',
         });
         navigate('/auth/forgot-password');
-        return;
       }
-    } else {
-      // No hash means no recovery tokens
-      toast({
-        title: 'Link tidak valid',
-        description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
-        variant: 'destructive',
-      });
-      navigate('/auth/forgot-password');
-      return;
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        console.log('Recovery session established:', session);
-        // Clean the URL after recovery session is established
-        setTimeout(() => {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }, 100);
-      }
-    });
+    }, 3000);
 
     return () => {
       subscription.unsubscribe();
+      if (redirectTimeout) clearTimeout(redirectTimeout);
     };
-  }, [navigate, toast]);
+  }, [navigate, toast, recoverySessionReady]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,16 +58,17 @@ const UpdatePassword = () => {
       return;
     }
 
+    if (!recoverySessionReady) {
+      toast({
+        title: 'Error',
+        description: 'Session recovery belum siap. Silakan tunggu atau coba kembali.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      // Check current session before attempting update
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('Current session before update:', session);
-      
-      if (sessionError || !session) {
-        throw new Error('No active recovery session');
-      }
-
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
         console.log('Update user error:', error);
@@ -87,7 +84,7 @@ const UpdatePassword = () => {
       console.log('Password update failed:', error);
       toast({
         title: 'Error',
-        description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
+        description: 'Gagal memperbarui kata sandi. Silakan coba lagi.',
         variant: 'destructive',
       });
     } finally {
