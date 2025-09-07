@@ -15,72 +15,57 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const handlePasswordReset = async () => {
+    const initRecoverySession = async () => {
       try {
-        // Check if there's a hash fragment
-        if (!window.location.hash) {
-          throw new Error('No hash fragment');
-        }
+        // Must be present for recovery links
+        if (!window.location.hash) throw new Error('No hash');
 
-        // Parse the hash to check for recovery type
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const type = hashParams.get('type');
-        
-        if (type !== 'recovery') {
-          throw new Error('Not a recovery link');
-        }
+        // Make sure it's a recovery link
+        const params = new URLSearchParams(window.location.hash.slice(1));
+        const type = params.get('type');
+        if (type !== 'recovery') throw new Error('Not a recovery link');
 
-        // Get current session to verify token was processed
+        // Process the hash and get session
         const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error || !session) {
-          throw error || new Error('No session');
-        }
+        if (error || !session) throw error || new Error('No session');
+
+        // Optional: clean the URL so the hash with token disappears
+        window.history.replaceState({}, document.title, window.location.pathname);
       } catch {
         toast({
-          title: "Link tidak valid",
-          description: "Link reset password tidak valid atau sudah kedaluwarsa.",
-          variant: "destructive"
+          title: 'Link tidak valid',
+          description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
+          variant: 'destructive',
         });
-        navigate("/auth/forgot-password");
+        navigate('/auth/forgot-password');
       }
     };
 
-    handlePasswordReset();
+    initRecoverySession();
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!password) {
-      toast({
-        title: "Error",
-        description: "Silakan masukkan kata sandi baru.",
-        variant: "destructive"
-      });
+      toast({ title: 'Error', description: 'Silakan masukkan kata sandi baru.', variant: 'destructive' });
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
-
+      const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
-      toast({
-        title: "Berhasil!",
-        description: "Kata sandi berhasil diperbarui. Silakan login kembali.",
-      });
+      toast({ title: 'Berhasil!', description: 'Kata sandi berhasil diperbarui. Silakan login kembali.' });
 
-      // Redirect to auth page
+      // (Optional) end the recovery session and send user to login
+      await supabase.auth.signOut();
       navigate('/auth');
-    } catch (error: any) {
+    } catch {
       toast({
-        title: "Error",
-        description: "Link reset password tidak valid atau sudah kedaluwarsa.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -90,7 +75,6 @@ const UpdatePassword = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Heart className="h-8 w-8 text-primary" />
@@ -103,9 +87,7 @@ const UpdatePassword = () => {
         <Card className="shadow-lg">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl">Password Baru</CardTitle>
-            <CardDescription>
-              Masukkan password baru untuk akun Anda
-            </CardDescription>
+            <CardDescription>Masukkan password baru untuk akun Anda</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdatePassword} className="space-y-4">
@@ -124,12 +106,8 @@ const UpdatePassword = () => {
                   />
                 </div>
               </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90" 
-                disabled={loading}
-              >
+
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
                 {loading ? 'Menyimpan...' : 'Simpan Kata Sandi'}
               </Button>
             </form>
