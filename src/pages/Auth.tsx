@@ -15,6 +15,7 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -168,6 +169,39 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        title: "Error",
+        description: "Silakan masukkan email Anda terlebih dahulu.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email terkirim!",
+        description: "Silakan cek email Anda untuk link reset password.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Gagal mengirim email",
+        description: "Terjadi kesalahan. Silakan coba lagi.",
+        variant: "destructive"
+      });
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -227,6 +261,17 @@ const Auth = () => {
                         required
                       />
                     </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      disabled={forgotPasswordLoading}
+                      className="text-sm text-primary hover:text-primary/80 hover:underline disabled:opacity-50"
+                    >
+                      {forgotPasswordLoading ? 'Mengirim...' : 'Lupa password?'}
+                    </button>
                   </div>
                   
                   <Button 
