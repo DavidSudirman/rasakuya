@@ -1,63 +1,61 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, Sparkles, Lock, Eye, EyeOff } from 'lucide-react';
+import { Heart, Sparkles, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const UpdatePassword = () => {
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if we have the necessary tokens from the email link
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    
-    if (!accessToken || !refreshToken) {
+    const exchangeCodeForSession = async () => {
+      try {
+        const { error } = await supabase.auth.exchangeCodeForSession(window.location.hash);
+        
+        if (error) {
+          toast({
+            title: "Link tidak valid",
+            description: "Link reset password tidak valid atau sudah kedaluwarsa.",
+            variant: "destructive"
+          });
+          navigate('/auth/forgot-password');
+        }
+      } catch (error) {
+        toast({
+          title: "Link tidak valid", 
+          description: "Link reset password tidak valid atau sudah kedaluwarsa.",
+          variant: "destructive"
+        });
+        navigate('/auth/forgot-password');
+      }
+    };
+
+    if (window.location.hash) {
+      exchangeCodeForSession();
+    } else {
       toast({
         title: "Link tidak valid",
-        description: "Link reset password tidak valid atau sudah kadaluarsa.",
+        description: "Link reset password tidak valid atau sudah kedaluwarsa.",
         variant: "destructive"
       });
       navigate('/auth/forgot-password');
     }
-  }, [searchParams, navigate, toast]);
+  }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!password || !confirmPassword) {
+    if (!password) {
       toast({
         title: "Error",
-        description: "Silakan isi semua field.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Password dan konfirmasi password tidak sama.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password harus minimal 6 karakter.",
+        description: "Silakan masukkan kata sandi baru.",
         variant: "destructive"
       });
       return;
@@ -72,16 +70,16 @@ const UpdatePassword = () => {
       if (error) throw error;
 
       toast({
-        title: "Password berhasil diubah!",
-        description: "Password Anda telah berhasil diperbarui.",
+        title: "Berhasil!",
+        description: "Kata sandi berhasil diperbarui. Silakan login kembali.",
       });
 
-      // Redirect to main app
-      navigate('/');
+      // Redirect to auth page
+      navigate('/auth');
     } catch (error: any) {
       toast({
-        title: "Gagal mengubah password",
-        description: error.message || "Terjadi kesalahan. Silakan coba lagi.",
+        title: "Error",
+        description: "Link reset password tidak valid atau sudah kedaluwarsa.",
         variant: "destructive"
       });
     } finally {
@@ -117,54 +115,22 @@ const UpdatePassword = () => {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Minimal 6 karakter"
+                    type="password"
+                    placeholder="Masukkan password baru"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
+                    className="pl-10"
                     required
-                    minLength={6}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Ulangi password baru"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
                 </div>
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full bg-primary hover:bg-primary/90" 
                 disabled={loading}
               >
-                {loading ? 'Mengubah password...' : 'Ubah Password'}
+                {loading ? 'Menyimpan...' : 'Simpan Kata Sandi'}
               </Button>
             </form>
           </CardContent>
