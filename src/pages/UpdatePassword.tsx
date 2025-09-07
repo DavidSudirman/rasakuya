@@ -14,13 +14,6 @@ const UpdatePassword = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Debug logging
-  console.log("UpdatePassword component loaded", {
-    pathname: window.location.pathname,
-    hash: window.location.hash,
-    fullUrl: window.location.href
-  });
-
   useEffect(() => {
     const exchangeCodeForSession = async () => {
       try {
