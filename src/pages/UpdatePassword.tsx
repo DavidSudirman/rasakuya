@@ -17,30 +17,48 @@ const UpdatePassword = () => {
   useEffect(() => {
     const processRecoveryTokens = async () => {
       try {
+        console.log('Processing recovery tokens...');
+        console.log('Current URL hash:', window.location.hash);
+        
         // Check if there's a hash fragment with tokens
         if (!window.location.hash) {
           throw new Error('No hash fragment');
         }
 
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        console.log('Hash params:', Object.fromEntries(hashParams.entries()));
+        
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
         const type = hashParams.get('type');
         
-        if (type !== 'recovery' || !accessToken) {
-          throw new Error('Invalid recovery link');
+        console.log('Token details:', { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken, type });
+        
+        if (type !== 'recovery') {
+          throw new Error('Not a recovery link - type: ' + type);
+        }
+        
+        if (!accessToken) {
+          throw new Error('No access token found');
         }
 
+        console.log('Setting session with tokens...');
         // Set the session using the tokens from the hash
-        const { error } = await supabase.auth.setSession({
+        const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || ''
         });
 
-        if (error) throw error;
+        console.log('Set session result:', { data: !!data, error });
+
+        if (error) {
+          console.error('Session error:', error);
+          throw error;
+        }
 
         // Clean the URL
         window.history.replaceState({}, document.title, window.location.pathname);
+        console.log('Recovery session established successfully');
         
       } catch (error) {
         console.error('Recovery token processing error:', error);
@@ -49,7 +67,10 @@ const UpdatePassword = () => {
           description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
           variant: 'destructive',
         });
-        navigate('/auth/forgot-password');
+        // Don't redirect immediately, let user see the error
+        setTimeout(() => {
+          navigate('/auth/forgot-password');
+        }, 3000);
       }
     };
 
