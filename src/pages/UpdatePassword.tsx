@@ -15,38 +15,38 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const exchangeCodeForSession = async () => {
+    const handlePasswordReset = async () => {
       try {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.hash);
-        
-        if (error) {
-          toast({
-            title: "Link tidak valid",
-            description: "Link reset password tidak valid atau sudah kedaluwarsa.",
-            variant: "destructive"
-          });
-          navigate('/auth/forgot-password');
+        // Check if there's a hash fragment
+        if (!window.location.hash) {
+          throw new Error('No hash fragment');
         }
-      } catch (error) {
+
+        // Parse the hash to check for recovery type
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const type = hashParams.get('type');
+        
+        if (type !== 'recovery') {
+          throw new Error('Not a recovery link');
+        }
+
+        // Get current session to verify token was processed
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error || !session) {
+          throw error || new Error('No session');
+        }
+      } catch {
         toast({
-          title: "Link tidak valid", 
+          title: "Link tidak valid",
           description: "Link reset password tidak valid atau sudah kedaluwarsa.",
           variant: "destructive"
         });
-        navigate('/auth/forgot-password');
+        navigate("/auth/forgot-password");
       }
     };
 
-    if (window.location.hash) {
-      exchangeCodeForSession();
-    } else {
-      toast({
-        title: "Link tidak valid",
-        description: "Link reset password tidak valid atau sudah kedaluwarsa.",
-        variant: "destructive"
-      });
-      navigate('/auth/forgot-password');
-    }
+    handlePasswordReset();
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
