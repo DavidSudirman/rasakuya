@@ -58,17 +58,14 @@ const UpdatePassword = () => {
       return;
     }
 
-    if (!recoverySessionReady) {
-      toast({
-        title: 'Error',
-        description: 'Session recovery belum siap. Silakan tunggu atau coba kembali.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setLoading(true);
     try {
+      // Get current session and log it for debugging
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Current session:', session);
+      console.log('Session error:', sessionError);
+      console.log('Recovery session ready:', recoverySessionReady);
+
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
         console.log('Update user error:', error);
@@ -80,11 +77,11 @@ const UpdatePassword = () => {
       // End the recovery session and send user to login
       await supabase.auth.signOut();
       navigate('/auth');
-    } catch (error) {
+    } catch (error: any) {
       console.log('Password update failed:', error);
       toast({
         title: 'Error',
-        description: 'Gagal memperbarui kata sandi. Silakan coba lagi.',
+        description: error.message || 'Gagal memperbarui kata sandi. Silakan coba lagi.',
         variant: 'destructive',
       });
     } finally {
