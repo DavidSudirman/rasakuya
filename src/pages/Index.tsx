@@ -45,15 +45,6 @@ const Index = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
 
-  // Check for recovery redirect on load
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      navigate("/auth/update-password" + hash);
-      return;
-    }
-  }, [navigate]);
-
   // Check authentication and load mood entries
   useEffect(() => {
     if (authLoading) return;
