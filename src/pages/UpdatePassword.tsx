@@ -15,15 +15,6 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // Clean the URL after recovery session is established
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (event === 'SIGNED_OUT') {
-        // Handle sign out if needed
-      }
-    });
-
     // Check if this is a recovery link on page load
     if (window.location.hash) {
       const params = new URLSearchParams(window.location.hash.slice(1));
@@ -36,8 +27,8 @@ const UpdatePassword = () => {
           variant: 'destructive',
         });
         navigate('/auth/forgot-password');
+        return;
       }
-      // If it's a recovery link, let Supabase handle it automatically
     } else {
       // No hash means no recovery tokens
       toast({
@@ -46,7 +37,18 @@ const UpdatePassword = () => {
         variant: 'destructive',
       });
       navigate('/auth/forgot-password');
+      return;
     }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('Recovery session established:', session);
+        // Clean the URL after recovery session is established
+        setTimeout(() => {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }, 100);
+      }
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -62,15 +64,27 @@ const UpdatePassword = () => {
 
     setLoading(true);
     try {
+      // Check current session before attempting update
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Current session before update:', session);
+      
+      if (sessionError || !session) {
+        throw new Error('No active recovery session');
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      if (error) {
+        console.log('Update user error:', error);
+        throw error;
+      }
 
       toast({ title: 'Berhasil!', description: 'Kata sandi berhasil diperbarui. Silakan login kembali.' });
 
-      // (Optional) end the recovery session and send user to login
+      // End the recovery session and send user to login
       await supabase.auth.signOut();
       navigate('/auth');
-    } catch {
+    } catch (error) {
+      console.log('Password update failed:', error);
       toast({
         title: 'Error',
         description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
