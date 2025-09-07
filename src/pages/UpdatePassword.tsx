@@ -15,53 +15,45 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    const processRecoveryTokens = async () => {
+      try {
+        // Check if there's a hash fragment with tokens
+        if (!window.location.hash) {
+          throw new Error('No hash fragment');
+        }
 
-    const handleRecoveryLink = () => {
-      // Must be present for recovery links
-      if (!window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+        
+        if (type !== 'recovery' || !accessToken) {
+          throw new Error('Invalid recovery link');
+        }
+
+        // Set the session using the tokens from the hash
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || ''
+        });
+
+        if (error) throw error;
+
+        // Clean the URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+      } catch (error) {
+        console.error('Recovery token processing error:', error);
         toast({
           title: 'Link tidak valid',
           description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
           variant: 'destructive',
         });
         navigate('/auth/forgot-password');
-        return;
       }
-
-      // Make sure it's a recovery link
-      const params = new URLSearchParams(window.location.hash.slice(1));
-      const type = params.get('type');
-      if (type !== 'recovery') {
-        toast({
-          title: 'Link tidak valid',
-          description: 'Link reset password tidak valid atau sudah kedaluwarsa.',
-          variant: 'destructive',
-        });
-        navigate('/auth/forgot-password');
-        return;
-      }
-
-      // Clean the URL so the hash with token disappears
-      window.history.replaceState({}, document.title, window.location.pathname);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // Password recovery session established
-        handleRecoveryLink();
-      } else if (event === 'SIGNED_OUT') {
-        // Handle sign out if needed
-      }
-    });
-
-    // Also handle the case where tokens are in hash on page load
-    handleRecoveryLink();
-
-    return () => {
-      subscription.unsubscribe();
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    processRecoveryTokens();
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
