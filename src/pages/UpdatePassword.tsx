@@ -15,11 +15,11 @@ const UpdatePassword = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkSession = async () => {
+    const exchangeCodeForSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.hash);
         
-        if (!session) {
+        if (error) {
           toast({
             title: "Link tidak valid",
             description: "Link reset password tidak valid atau sudah kedaluwarsa.",
@@ -37,7 +37,16 @@ const UpdatePassword = () => {
       }
     };
 
-    checkSession();
+    if (window.location.hash) {
+      exchangeCodeForSession();
+    } else {
+      toast({
+        title: "Link tidak valid",
+        description: "Link reset password tidak valid atau sudah kedaluwarsa.",
+        variant: "destructive"
+      });
+      navigate('/auth/forgot-password');
+    }
   }, [navigate, toast]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
