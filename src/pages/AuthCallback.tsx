@@ -9,16 +9,6 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Check URL parameters for recovery type
-        const urlParams = new URLSearchParams(window.location.search);
-        const type = urlParams.get('type');
-        
-        if (type === 'recovery') {
-          // This is a password recovery, redirect to update password page
-          navigate('/auth/update-password');
-          return;
-        }
-        
         // Get session from URL
         const { data, error } = await supabase.auth.getSession();
         

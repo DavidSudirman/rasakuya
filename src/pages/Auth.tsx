@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,6 @@ const Auth = () => {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -169,7 +168,6 @@ const Auth = () => {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -229,15 +227,6 @@ const Auth = () => {
                         required
                       />
                     </div>
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Link 
-                      to="/auth/forgot-password"
-                      className="text-sm text-primary hover:text-primary/80 hover:underline"
-                    >
-                      Lupa password?
-                    </Link>
                   </div>
                   
                   <Button 
