@@ -7,41 +7,32 @@ const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    (async () => {
       try {
-        // Check URL parameters for recovery type
-        const urlParams = new URLSearchParams(window.location.search);
-        const type = urlParams.get('type');
-        
+        const url = new URL(window.location.href);
+        const type = url.searchParams.get('type');
+
+        // Password recovery link → push to update password flow
         if (type === 'recovery') {
-          // This is a password recovery, redirect to update password page
           navigate('/auth/update-password');
           return;
         }
-        
-        // Get session from URL
-        const { data, error } = await supabase.auth.getSession();
-        
+
+        // ✅ Exchange the code in the URL for a session
+        const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
         if (error) {
-          console.error('Auth callback error:', error);
+          console.error('Auth callback error (exchange):', error);
           navigate('/auth');
           return;
         }
 
-        if (data.session) {
-          // User is authenticated, redirect to main app
-          navigate('/');
-        } else {
-          // No session, redirect to auth page
-          navigate('/auth');
-        }
-      } catch (error) {
-        console.error('Auth callback error:', error);
+        // All good → go home
+        navigate('/');
+      } catch (err) {
+        console.error('Auth callback fatal:', err);
         navigate('/auth');
       }
-    };
-
-    handleAuthCallback();
+    })();
   }, [navigate]);
 
   return (

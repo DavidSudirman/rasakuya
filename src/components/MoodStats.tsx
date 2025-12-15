@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from './ui/card';
 import { BarChart3, Calendar, TrendingUp } from 'lucide-react';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface MoodEntry {
   date: string;
@@ -13,9 +14,11 @@ interface MoodStatsProps {
 }
 
 export const MoodStats: React.FC<MoodStatsProps> = ({ moodEntries }) => {
+  const { t } = useLanguage();
+
   const getMoodStats = () => {
     if (moodEntries.length === 0) {
-      return { mostCommon: null, streak: 0, weekAverage: 0 };
+      return { mostCommon: null as string | null, streak: 0, weekAverage: 0 };
     }
 
     // Count mood frequencies
@@ -26,9 +29,9 @@ export const MoodStats: React.FC<MoodStatsProps> = ({ moodEntries }) => {
 
     // Find most common mood
     const mostCommon = Object.entries(moodCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0];
+      .sort(([,a], [,b]) => b - a)[0]?.[0] ?? null;
 
-    // Calculate positive streak (happy or good moods)
+    // Positive streak
     let currentStreak = 0;
     for (let i = moodEntries.length - 1; i >= 0; i--) {
       if (moodEntries[i].mood === 'sangat-bahagia' || moodEntries[i].mood === 'bahagia') {
@@ -38,7 +41,7 @@ export const MoodStats: React.FC<MoodStatsProps> = ({ moodEntries }) => {
       }
     }
 
-    // Calculate this week's average (simplified)
+    // This week's average (simplified)
     const recentEntries = moodEntries.slice(-7);
     const moodValues = recentEntries.map(entry => {
       switch (entry.mood) {
@@ -72,13 +75,14 @@ export const MoodStats: React.FC<MoodStatsProps> = ({ moodEntries }) => {
   };
 
   const getMoodName = (mood: string | null) => {
+    if (!mood) return t('stats.no_data');
     switch (mood) {
-      case 'sangat-bahagia': return 'Sangat Bahagia';
-      case 'bahagia': return 'Bahagia';
-      case 'netral': return 'Netral';
-      case 'sedih': return 'Sedih';
-      case 'marah': return 'Marah';
-      default: return 'Belum ada data';
+      case 'sangat-bahagia': return t('mood.very_happy');
+      case 'bahagia':        return t('mood.happy');
+      case 'netral':         return t('mood.neutral');
+      case 'sedih':          return t('mood.sad');
+      case 'marah':          return t('mood.angry');
+      default:               return t('stats.no_data');
     }
   };
 
@@ -90,7 +94,7 @@ export const MoodStats: React.FC<MoodStatsProps> = ({ moodEntries }) => {
             <BarChart3 className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Mood Paling Sering</p>
+            <p className="text-sm text-muted-foreground">{t('stats.most_frequent')}</p>
             <div className="flex items-center gap-2">
               <span className="text-lg">{getMoodEmoji(mostCommon)}</span>
               <span className="font-semibold text-sm">{getMoodName(mostCommon)}</span>
@@ -105,8 +109,8 @@ export const MoodStats: React.FC<MoodStatsProps> = ({ moodEntries }) => {
             <TrendingUp className="h-4 w-4 text-mood-good" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Streak Positif</p>
-            <p className="font-semibold">{streak} hari</p>
+            <p className="text-sm text-muted-foreground">{t('stats.positive_streak')}</p>
+            <p className="font-semibold">{streak} {t('stats.days')}</p>
           </div>
         </div>
       </Card>
@@ -117,7 +121,7 @@ export const MoodStats: React.FC<MoodStatsProps> = ({ moodEntries }) => {
             <Calendar className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Rata-rata Minggu Ini</p>
+            <p className="text-sm text-muted-foreground">{t('stats.week_avg')}</p>
             <div className="flex items-center gap-2">
               <div className="w-16 bg-muted rounded-full h-2">
                 <div 

@@ -1,6 +1,6 @@
 # Rasakuya Chatbot
 
-A secure, production-ready chatbot powered by OpenRouter's free DeepSeek model.
+A secure, production-ready chatbot powered by OpenRouter's free openai model.
 
 ## Features
 
@@ -13,7 +13,7 @@ A secure, production-ready chatbot powered by OpenRouter's free DeepSeek model.
 
 - **Backend**: Supabase Edge Function (`chat-openrouter`)
 - **Frontend**: React Chat page + Standalone HTML widget
-- **AI Model**: `deepseek/deepseek-chat-v3-0324:free` via OpenRouter
+- **AI Model**: 'openai/gpt-oss-20b:free' via OpenRouter
 
 ## Usage
 
@@ -100,8 +100,8 @@ const RATE_LIMIT_MAX = 10; // 10 requests per minute
 
 ## Model Information
 
-Using DeepSeek Chat v3 (free tier):
-- **Model**: `deepseek/deepseek-chat-v3-0324:free`
+Using openai (free tier):
+- **Model**: 'openai/gpt-oss-20b:free'
 - **Provider**: OpenRouter
 - **Cost**: Free
 - **Context**: Supports conversation history (last 10 messages)

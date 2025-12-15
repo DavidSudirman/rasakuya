@@ -1,53 +1,80 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
-import { useLanguage } from '@/hooks/useLanguage';
-import { useAuth } from '@/hooks/useAuth';
+// src/components/AccountDropdown.tsx
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { User, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
-interface AccountDropdownProps {}
+export function AccountDropdown() {
+  const { signOut, user } = useAuth();
+  const [profileName, setProfileName] = useState<string | null>(null);
 
-export const AccountDropdown: React.FC<AccountDropdownProps> = () => {
-  const { t } = useLanguage();
-  const { user, signOut } = useAuth();
+  // 🔹 Load name from profiles.name
+  useEffect(() => {
+    if (!user) return;
 
-  const displayName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'User';
+    (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!error && data?.name) {
+        setProfileName(data.name);
+      }
+    })();
+  }, [user]);
+
+  // 🔹 Build final display name (with fallbacks)
+  const displayName =
+    profileName ||
+    (user as any)?.user_metadata?.full_name ||
+    user?.email?.split("@")[0] ||
+    "friend";
+
+  if (!user) return null;
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="bg-white/10 border-white/20 text-white hover:bg-white/20 gap-2"
-        >
-          <User className="h-4 w-4" />
-          <span className="hidden sm:inline">
-            {t('header.greeting').replace('{name}', displayName)}
-          </span>
-          <ChevronDown className="h-4 w-4" />
-        </Button>
+      <DropdownMenuTrigger className="flex items-center gap-2 rounded-xl px-4 py-2 bg-white/20 hover:bg-white/25 text-white">
+        <User className="h-4 w-4" />
+        <span>Hello, {displayName}!</span>
+        <span className="ml-1">▾</span>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem className="cursor-pointer">
-          <User className="h-4 w-4 mr-2" />
-          {t('account.profile')}
+        <DropdownMenuItem asChild>
+          <Link to="/profile" className="flex items-center gap-2 w-full">
+            <User className="h-4 w-4" />
+            <span>Profile</span>
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <Settings className="h-4 w-4 mr-2" />
-          {t('account.settings')}
+
+        <DropdownMenuItem asChild>
+          <Link to="/settings" className="flex items-center gap-2 w-full">
+            <SettingsIcon className="h-4 w-4" />
+            <span>Settings</span>
+          </Link>
         </DropdownMenuItem>
+
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer text-red-600" onClick={signOut}>
-          <LogOut className="h-4 w-4 mr-2" />
-          {t('header.logout')}
+
+        <DropdownMenuItem
+          onClick={signOut}
+          className="text-red-600 focus:text-red-700"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
+}

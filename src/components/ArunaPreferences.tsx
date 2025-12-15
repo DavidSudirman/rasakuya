@@ -7,26 +7,35 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useTTS } from '@/hooks/useTTS';
 
 interface ArunaPreferencesProps {
   onClose?: () => void;
 }
 
+type VoiceGender = 'auto' | 'male' | 'female';
+
+interface ArunaMemory {
+  personality_summary?: string;
+  style?: string;
+  voiceOn?: boolean;
+  voiceGender?: VoiceGender;
+  voiceName?: string | null;
+}
+
 export const ArunaPreferences: React.FC<ArunaPreferencesProps> = ({ onClose }) => {
-  const [preferences, setPreferences] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { supported: ttsSupported, voices } = useTTS();
+  const [memory, setMemory] = useState<ArunaMemory>({});
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadPreferences();
-  }, [user]);
+  useEffect(() => { loadPreferences(); }, [user]);
 
   const loadPreferences = async () => {
     if (!user) return;
-    
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -34,18 +43,17 @@ export const ArunaPreferences: React.FC<ArunaPreferencesProps> = ({ onClose }) =
         .select('aruna_preferences')
         .eq('user_id', user.id)
         .single();
-
       if (error && error.code !== 'PGRST116') throw error;
-      
       if (data?.aruna_preferences) {
-        setPreferences(data.aruna_preferences);
-      }
+        const parsed = JSON.parse(data.aruna_preferences);
+        setMemory(parsed || {});
+      } else setMemory({});
     } catch (error) {
       console.error('Error loading ARUNA preferences:', error);
       toast({
         title: t('common.error'),
         description: language === 'id' ? 'Gagal memuat preferensi ARUNA' : 'Failed to load ARUNA preferences',
-        variant: "destructive"
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -54,32 +62,28 @@ export const ArunaPreferences: React.FC<ArunaPreferencesProps> = ({ onClose }) =
 
   const savePreferences = async () => {
     if (!user) return;
-    
     setSaving(true);
     try {
+      const payload = JSON.stringify(memory ?? {});
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user.id,
-          aruna_preferences: preferences.trim() || null
-        }, {
-          onConflict: 'user_id'
-        });
-
+        .upsert({ user_id: user.id, aruna_preferences: payload }, { onConflict: 'user_id' });
       if (error) throw error;
-      
       toast({
         title: language === 'id' ? 'Berhasil!' : 'Success!',
-        description: language === 'id' ? 'Preferensi ARUNA telah disimpan' : 'ARUNA preferences have been saved',
+        description: language === 'id'
+          ? 'Preferensi ARUNA telah disimpan'
+          : 'ARUNA preferences have been saved',
       });
-      
-      if (onClose) onClose();
+      onClose?.();
     } catch (error) {
       console.error('Error saving ARUNA preferences:', error);
       toast({
         title: t('common.error'),
-        description: language === 'id' ? 'Gagal menyimpan preferensi ARUNA' : 'Failed to save ARUNA preferences',
-        variant: "destructive"
+        description: language === 'id'
+          ? 'Gagal menyimpan preferensi ARUNA'
+          : 'Failed to save ARUNA preferences',
+        variant: 'destructive',
       });
     } finally {
       setSaving(false);
@@ -87,11 +91,23 @@ export const ArunaPreferences: React.FC<ArunaPreferencesProps> = ({ onClose }) =
   };
 
   const resetToDefault = () => {
-    const defaultPreferences = language === 'id' 
-      ? "Berikan respons yang empati dan supportif. Gunakan bahasa yang hangat dan ramah. Berikan saran praktis yang mudah diterapkan dalam kehidupan sehari-hari."
-      : "Provide empathetic and supportive responses. Use warm and friendly language. Give practical advice that's easy to apply in daily life.";
-    
-    setPreferences(defaultPreferences);
+    setMemory({
+      personality_summary:
+        language === 'id'
+          ? 'Santai, empatik, dan realistis. Gunakan bahasa alami dan hangat.'
+          : 'Calm, empathetic, and realistic. Use natural and warm language.',
+      style:
+        language === 'id'
+          ? 'Jawab singkat (2–4 kalimat), empatik, suportif, dan jelas.'
+          : 'Be concise (2–4 sentences), empathetic, supportive, and clear.',
+      voiceOn: false,
+      voiceGender: 'auto',
+      voiceName: null,
+    });
+  };
+
+  const updateMemory = (key: keyof ArunaMemory, value: any) => {
+    setMemory(prev => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -102,74 +118,105 @@ export const ArunaPreferences: React.FC<ArunaPreferencesProps> = ({ onClose }) =
           {language === 'id' ? 'Preferensi ARUNA' : 'ARUNA Preferences'}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {language === 'id' 
-            ? 'Sesuaikan cara ARUNA merespons Anda' 
-            : 'Customize how ARUNA responds to you'
-          }
+          {language === 'id'
+            ? 'Atur tipe terapis dan gaya bicara ARUNA'
+            : 'Set therapist type and response style'}
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
           <label className="text-sm font-medium mb-2 block">
-            {language === 'id' 
-              ? 'Bagaimana Anda ingin ARUNA merespons?' 
-              : 'How do you want ARUNA to respond?'
-            }
+            {language === 'id' ? 'Gaya respons ARUNA' : 'ARUNA response style'}
           </label>
           <Textarea
-            value={preferences}
-            onChange={(e) => setPreferences(e.target.value)}
-            placeholder={language === 'id' 
-              ? 'Contoh: Berikan respons yang singkat dan langsung ke poin. Gunakan bahasa yang profesional. Fokus pada solusi praktis...'
-              : 'Example: Give short and direct responses. Use professional language. Focus on practical solutions...'
+            value={memory.style || ''}
+            onChange={(e) => updateMemory('style', e.target.value)}
+            placeholder={
+              language === 'id'
+                ? 'Contoh: Singkat (2–4 kalimat), empatik, jelas.'
+                : 'Example: Short (2–4 sentences), empathetic, clear.'
             }
-            className="min-h-[120px]"
-            disabled={loading || saving}
+            className="min-h-[100px]"
           />
-          <p className="text-xs text-muted-foreground mt-1">
-            {language === 'id' 
-              ? 'Deskripsikan gaya komunikasi, tone, dan jenis saran yang Anda inginkan dari ARUNA'
-              : 'Describe the communication style, tone, and type of advice you want from ARUNA'
-            }
-          </p>
+        </div>
+
+        {/* Voice settings */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">
+            {language === 'id' ? 'Pengaturan Suara (TTS)' : 'Voice Settings (TTS)'}
+          </label>
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              id="voiceOn"
+              type="checkbox"
+              checked={!!memory.voiceOn}
+              onChange={(e) => updateMemory('voiceOn', e.target.checked)}
+              disabled={!ttsSupported || loading || saving}
+            />
+            <label htmlFor="voiceOn" className="text-sm">
+              {language === 'id' ? 'Aktifkan balasan suara' : 'Enable voice replies'}
+            </label>
+          </div>
+
+          <div className="flex gap-3 mb-3 flex-wrap">
+            {(['auto', 'male', 'female'] as VoiceGender[]).map((g) => (
+              <label key={g} className="text-sm flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="voiceGender"
+                  value={g}
+                  checked={memory.voiceGender === g}
+                  onChange={() => updateMemory('voiceGender', g)}
+                  disabled={!ttsSupported || loading || saving}
+                />
+                {language === 'id'
+                  ? g === 'auto'
+                    ? 'Otomatis'
+                    : g === 'male'
+                    ? 'Laki-laki'
+                    : 'Perempuan'
+                  : g}
+              </label>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{language === 'id' ? 'Pilih suara:' : 'Choose voice:'}</span>
+            <select
+              className="text-sm border rounded p-1 flex-1"
+              value={memory.voiceName || ''}
+              onChange={(e) => updateMemory('voiceName', e.target.value)}
+              disabled={!ttsSupported || loading || saving}
+            >
+              <option value="">{language === 'id' ? 'Pilih otomatis' : 'Auto select'}</option>
+              {voices.map((v) => (
+                <option key={v.name} value={v.name}>
+                  {v.name} — {v.lang}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex gap-2 justify-between">
-          <Button
-            variant="outline"
-            onClick={resetToDefault}
-            disabled={loading || saving}
-            size="sm"
-          >
+          <Button variant="outline" onClick={resetToDefault} disabled={loading || saving} size="sm">
             <RotateCcw className="h-4 w-4 mr-1" />
-            {language === 'id' ? 'Reset Default' : 'Reset Default'}
+            {language === 'id' ? 'Reset Default' : 'Reset to Default'}
           </Button>
-          
           <div className="flex gap-2">
             {onClose && (
-              <Button
-                variant="outline"
-                onClick={onClose}
-                disabled={saving}
-              >
+              <Button variant="outline" onClick={onClose} disabled={saving}>
                 {language === 'id' ? 'Batal' : 'Cancel'}
               </Button>
             )}
-            <Button
-              onClick={savePreferences}
-              disabled={loading || saving}
-            >
+            <Button onClick={savePreferences} disabled={loading || saving}>
               <Save className="h-4 w-4 mr-1" />
-              {saving 
-                ? (language === 'id' ? 'Menyimpan...' : 'Saving...') 
-                : (language === 'id' ? 'Simpan' : 'Save')
-              }
+              {saving ? (language === 'id' ? 'Menyimpan...' : 'Saving...') : (language === 'id' ? 'Simpan' : 'Save')}
             </Button>
           </div>
         </div>
       </div>
-
       {loading && (
         <div className="text-center text-muted-foreground mt-4">
           {language === 'id' ? 'Memuat preferensi...' : 'Loading preferences...'}

@@ -6,6 +6,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
+// ✅ NEW: mic hook
+import { useSpeech } from '@/hooks/useSpeech';
+
 interface Message {
   id: number;
   role: 'user' | 'assistant';
@@ -16,6 +19,21 @@ interface Message {
 const Chat = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // ===== Mic setup =====
+  // Toggle this if you want auto-send right after user stops speaking:
+  const AUTO_SEND_ON_STOP = false;
+
+  const {
+    supported: micSupported,
+    isListening,
+    transcript,
+    error: micError,
+    start: startMic,
+    stop: stopMic,
+    reset: resetMic,
+  } = useSpeech({ language: 'id-ID', continuous: true, interimResults: true });
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -31,7 +49,7 @@ const Chat = () => {
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
@@ -42,39 +60,59 @@ const Chat = () => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const sendMessage = async (e: React.FormEvent) => {
+  // Show mic permission/other errors nicely
+  useEffect(() => {
+    if (micError) {
+      toast({
+        title: "Microphone error",
+        description: micError,
+        variant: "destructive",
+      });
+    }
+  }, [micError, toast]);
+
+  // When user stops speaking, place transcript into the input (and optionally auto-send)
+  useEffect(() => {
+    if (!isListening && transcript) {
+      setCurrentMessage(prev => (prev ? (prev + " " + transcript).trim() : transcript));
+      if (AUTO_SEND_ON_STOP) {
+        // simulate pressing Send
+        setTimeout(() => {
+          const fakeEvt = { preventDefault: () => {} } as unknown as React.FormEvent;
+          // only send if not loading and we still have content
+          if (!isLoading) sendMessage(fakeEvt, transcript);
+        }, 0);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isListening]);
+
+  const sendMessage = async (e: React.FormEvent, override?: string) => {
     e.preventDefault();
-    
-    if (!currentMessage.trim() || isLoading) return;
+    const toSend = (override ?? currentMessage).trim();
+    if (!toSend || isLoading) return;
 
     const userMessage: Message = {
       id: messageIdCounter,
       role: 'user',
-      content: currentMessage.trim(),
+      content: toSend,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, userMessage]);
     setMessageIdCounter(prev => prev + 1);
-    const messageToSend = currentMessage.trim();
-    setCurrentMessage('');
+    if (!override) setCurrentMessage('');
     setIsLoading(true);
 
     try {
-      // Get conversation history for context
       const history = messages
         .slice(1) // Exclude the initial greeting
         .map(m => ({ role: m.role, content: m.content }));
 
       const response = await fetch('https://nkbgomndiyagxrlowrje.supabase.co/functions/v1/chat-openrouter', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: messageToSend,
-          history: history
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: toSend, history })
       });
 
       const data = await response.json();
@@ -97,12 +135,7 @@ const Chat = () => {
         };
         setMessages(prev => [...prev, errorMessage]);
         setMessageIdCounter(prev => prev + 1);
-        
-        toast({
-          title: "Chat Error",
-          description: data.error,
-          variant: "destructive",
-        });
+        toast({ title: "Chat Error", description: data.error, variant: "destructive" });
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -114,7 +147,6 @@ const Chat = () => {
       };
       setMessages(prev => [...prev, errorMessage]);
       setMessageIdCounter(prev => prev + 1);
-      
       toast({
         title: "Connection Error",
         description: "Unable to connect to the chat service. Please try again.",
@@ -122,6 +154,26 @@ const Chat = () => {
       });
     } finally {
       setIsLoading(false);
+      // after sending from voice, clear transcript so it doesn't append next time
+      if (override) resetMic();
+    }
+  };
+
+  // Toggle mic handler (single button behavior)
+  const onMicClick = () => {
+    if (!micSupported) {
+      toast({
+        title: "Mic not supported",
+        description: "Use Chrome/Edge, or we can switch to server STT (Whisper).",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (isListening) {
+      stopMic(); // stopping triggers transcript->input via the useEffect above
+    } else {
+      resetMic();
+      startMic();
     }
   };
 
@@ -143,13 +195,12 @@ const Chat = () => {
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.role === 'user'
+                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.role === 'user'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-200 text-gray-800'
-                      }`}
+                        }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                       <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
                     </div>
                   </div>
@@ -170,15 +221,29 @@ const Chat = () => {
             </ScrollArea>
             
             <div className="border-t p-4">
-              <form onSubmit={sendMessage} className="flex space-x-2">
+              <form onSubmit={(e) => sendMessage(e)} className="flex gap-2 items-center">
+                {/* MIC BUTTON */}
+                <Button
+                  type="button"
+                  onClick={onMicClick}
+                  variant={isListening ? 'destructive' : 'default'}
+                  className={isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'}
+                  title={isListening ? 'Stop listening' : 'Start listening'}
+                >
+                  {isListening ? '⏹️' : '🎙️'}
+                </Button>
+
+                {/* TEXT INPUT */}
                 <Input
                   type="text"
                   value={currentMessage}
                   onChange={(e) => setCurrentMessage(e.target.value)}
-                  placeholder="Type your message..."
+                  placeholder={micSupported ? (isListening ? "Listening… speak now" : "Type your message or tap the mic") : "Type your message…"}
                   disabled={isLoading}
                   className="flex-1"
                 />
+
+                {/* SEND */}
                 <Button
                   type="submit"
                   disabled={isLoading || !currentMessage.trim()}
@@ -187,6 +252,13 @@ const Chat = () => {
                   Send
                 </Button>
               </form>
+
+              {/* optional live transcript preview */}
+              {transcript && (
+                <p className="mt-2 text-xs text-gray-500">
+                  🎧 Transcript: <span className="italic">{transcript}</span>
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -1,3 +1,4 @@
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -58,19 +59,12 @@
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Smooth transitions */
@@ -145,3 +139,249 @@
     }
   }
 }
+
+/* ===============================
+   Neon Lightstreak (global styles)
+   =============================== */
+
+:root {
+  --neon1: #4fd1ff;
+  --neon2: #8264ff;
+}
+
+/* base glow for all trail pieces */
+.trail {
+  position: absolute;
+  background: linear-gradient(90deg, var(--neon1), var(--neon2));
+  filter:
+    drop-shadow(0 0 12px var(--neon1))
+    drop-shadow(0 0 30px var(--neon2))
+    drop-shadow(0 0 60px var(--neon2));
+  /* If your background is bright and this looks faint, swap to: normal */
+  mix-blend-mode: screen;
+  border-radius: 5px;
+}
+
+/* top line: expands from center outward */
+.top {
+  top: 12px;
+  left: 50%;
+  height: 6px;
+  width: 6px;                 /* starts tiny, grows with keyframe */
+  transform: translateX(-50%);
+  border-radius: 3px;
+  animation: topExpand 0.9s ease-out forwards;
+}
+
+/* side lines: drop down the edges with consistent glow */
+.left,
+.right {
+  top: 12px;
+  width: 6px;
+  height: 6px;               /* starts tiny, grows with keyframe */
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--neon1), var(--neon2), var(--neon1));
+  background-size: 100% 200%;
+  animation:
+    sideDrop 1.6s linear forwards 0.9s,
+    glowFlow 3s linear infinite;
+}
+.left  { left: 12px; }
+.right { right: 12px; }
+
+/* bottom join: draw from edges toward center */
+/* replace your current bottom-left / bottom-right blocks */
+
+.bottom-left,
+.bottom-right {
+  height: 6px;
+  width: 6px;
+  border-radius: 3px;
+  opacity: 0;
+}
+
+/* Make both bottom joins use the same speed/easing as the sides (1.6s linear) */
+.bottom-left {
+  bottom: 12px;
+  left: 12px;
+  background: linear-gradient(to right, var(--neon1), var(--neon2));
+  animation:
+    appear 0.01s linear forwards 2.5s,
+    bottomJoinLeft 1.6s linear forwards 2.5s;   /* was 0.9s ease-out */
+}
+
+.bottom-right {
+  bottom: 12px;
+  right: 12px;
+  background: linear-gradient(to left, var(--neon1), var(--neon2));
+  animation:
+    appear 0.01s linear forwards 2.5s,
+    bottomJoinRight 1.6s linear forwards 2.5s;  /* was 0.9s ease-out */
+}
+
+.video-fire {
+  mix-blend-mode: screen;  /* black is removed */
+  pointer-events: none;
+}
+
+/* 🌙 Sad stars overlay – bright genshin-like sky */
+.sad-stars-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -9;  /* above sad1.jpg (-10), below sparkles (-8) */
+  background-image: url("/themes/sad-stars.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  mix-blend-mode: screen;
+
+  opacity: 0;
+  filter:
+    brightness(1.8)
+    contrast(1.6)
+    saturate(1.2)
+    drop-shadow(0 0 12px rgba(255, 255, 255, 0.7));
+
+  animation:
+    sadStarsFadeInStrong 1s ease-out forwards,
+    sadStarsTwinkleStrong 4s ease-in-out infinite alternate 1s;
+}
+
+@keyframes sadStarsFadeInStrong {
+  0% {
+    opacity: 0;
+    transform: scale(1.05);
+    filter:
+      brightness(0.9)
+      contrast(1.0)
+      saturate(1.0)
+      drop-shadow(0 0 0 rgba(255,255,255,0));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter:
+      brightness(2.2)
+      contrast(1.8)
+      saturate(1.1)
+      drop-shadow(0 0 16px rgba(255,255,255,0.9));
+  }
+}
+
+@keyframes sadStarsTwinkleStrong {
+  0% {
+    opacity: 0.85;
+    filter:
+      brightness(1.8)
+      contrast(1.6)
+      drop-shadow(0 0 12px rgba(255,255,255,0.7));
+  }
+  50% {
+    opacity: 1;
+    filter:
+      brightness(2.4)
+      contrast(2.0)
+      drop-shadow(0 0 22px rgba(255,255,255,1));
+  }
+  100% {
+    opacity: 0.85;
+    filter:
+      brightness(1.7)
+      contrast(1.6)
+      drop-shadow(0 0 10px rgba(255,255,255,0.6));
+  }
+}
+
+/* ✨ Floating sparkles for sad mood */
+.sad-sparkles-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -8;   /* above stars texture, below content */
+  overflow: hidden;
+}
+
+/* individual sparkle */
+.sad-sparkle {
+  position: absolute;
+  border-radius: 9999px;
+  /* a small soft glowing dot */
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.4) 30%,
+    rgba(255, 255, 255, 0.05) 60%,
+    transparent 80%
+  );
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.9),
+    0 0 14px rgba(150, 200, 255, 0.9);
+
+  mix-blend-mode: screen;
+
+  opacity: 0;
+  transform: scale(0.4);
+  animation-name: sadSparkleTwinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* twinkling movement + fade */
+@keyframes sadSparkleTwinkle {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+    transform: translate3d(2px, -4px, 0) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate3d(-2px, -8px, 0) scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0) scale(0.3);
+  }
+}
+
+.neutral-bg {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.neutral-shapes-layer {
+  pointer-events: none;
+  transition: transform 0.35s ease-out;
+}
+
+.neutral-fade-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 10;
+  animation: neutralFadeFromBlack 0.7s ease-out forwards;
+}
+
+@keyframes neutralFadeFromBlack {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* keyframes */
+@keyframes topExpand { to { width: calc(100% - 24px); } }
+@keyframes sideDrop  { to { height: calc(100% - 24px); } }
+@keyframes glowFlow  { 0% { background-position: 0 0; } 100% { background-position: 0 200%; } }
+@keyframes appear    { to { opacity: 1; } }
+@keyframes bottomJoinLeft  { from { width: 0; } to { width: calc(50% - 12px); } }
+@keyframes bottomJoinRight { from { width: 0; } to { width: calc(50% - 12px); } }

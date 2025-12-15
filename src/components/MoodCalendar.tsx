@@ -1,7 +1,7 @@
+// src/components/MoodCalendar.tsx
 import React, { useState } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
@@ -12,8 +12,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
+// NEW: date + streak helpers
+import { ymdLocal, utcNoonIsoFromYmd } from '@/lib/dates';
+import { computeDailyStreak } from '@/lib/streak';
+
 interface MoodEntry {
-  date: string;
+  date: string; // YYYY-MM-DD (local)
   mood: string;
   emoji: string;
   description?: string;
@@ -24,17 +28,17 @@ interface MoodEntry {
 interface MoodCalendarProps {
   moodEntries: MoodEntry[];
   onDateSelect: (date: string) => void;
-  selectedDate: string | null;
+  selectedDate: string | null; // YYYY-MM-DD
   onMoodUpdate?: () => void;
 }
 
 const moodOptions: { [key: string]: { name: { en: string; id: string }; emoji: string; color: string } } = {
   'sangat-bahagia': { name: { en: 'Very Happy', id: 'Sangat Bahagia' }, emoji: '😄', color: 'bg-green-100' },
-  'bahagia': { name: { en: 'Happy', id: 'Bahagia' }, emoji: '😊', color: 'bg-blue-100' },
-  'netral': { name: { en: 'Neutral', id: 'Netral' }, emoji: '😐', color: 'bg-gray-100' },
-  'cemas': { name: { en: 'Anxious', id: 'Cemas' }, emoji: '😰', color: 'bg-yellow-100' },
-  'sedih': { name: { en: 'Sad', id: 'Sedih' }, emoji: '😔', color: 'bg-purple-100' },
-  'marah': { name: { en: 'Angry', id: 'Marah' }, emoji: '😠', color: 'bg-red-100' },
+  'bahagia':        { name: { en: 'Happy',       id: 'Bahagia' },         emoji: '😊', color: 'bg-blue-100' },
+  'netral':         { name: { en: 'Neutral',     id: 'Netral' },          emoji: '😐', color: 'bg-gray-100' },
+  'cemas':          { name: { en: 'Anxious',     id: 'Cemas' },           emoji: '😰', color: 'bg-yellow-100' },
+  'sedih':          { name: { en: 'Sad',         id: 'Sedih' },           emoji: '😔', color: 'bg-purple-100' },
+  'marah':          { name: { en: 'Angry',       id: 'Marah' },           emoji: '😠', color: 'bg-red-100' },
 };
 
 export const MoodCalendar: React.FC<MoodCalendarProps> = ({ 
@@ -44,7 +48,7 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
   onMoodUpdate 
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [editingMood, setEditingMood] = useState<string | null>(null);
+  const [editingMood, setEditingMood] = useState<string | null>(null); // YYYY-MM-DD
   const [editDescription, setEditDescription] = useState('');
   const [editEnergyLevel, setEditEnergyLevel] = useState(5);
   const [editMoodType, setEditMoodType] = useState<string | null>(null);
@@ -70,7 +74,7 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
   const startDate = new Date(firstDayOfMonth);
   startDate.setDate(startDate.getDate() - firstDayOfMonth.getDay());
   
-  const days = [];
+  const days: Date[] = [];
   const currentDay = new Date(startDate);
   
   // Generate 6 weeks of days
@@ -81,8 +85,17 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
     }
   }
 
+  // Build streak set based on current entries
+  const uniqueYmds = Array.from(new Set(moodEntries.map(e => e.date)));
+  const todayYmd = ymdLocal(new Date());
+  const { streakDays } = computeDailyStreak(uniqueYmds, todayYmd);
+  const latestStreakDay = (() => {
+    if (streakDays.size === 0) return null;
+    return Array.from(streakDays).sort().slice(-1)[0];
+  })();
+
   const getMoodForDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
+    const dateString = ymdLocal(date);
     return moodEntries.find(entry => entry.date === dateString);
   };
 
@@ -111,7 +124,7 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
       return;
     }
     
-    setEditingMood(dateString);
+    setEditingMood(dateString); // store as YYYY-MM-DD
     setEditDescription(moodEntry.description || '');
     setEditEnergyLevel(moodEntry.energy_level || 5);
     setEditMoodType(moodEntry.mood);
@@ -122,8 +135,8 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
     if (!editingMood || !editMoodType || !user) return;
 
     try {
-      const loggedAt = new Date(editingMood + 'T12:00:00Z').toISOString();
-      
+      const loggedAt = utcNoonIsoFromYmd(editingMood); // ✅ consistent
+
       const { error } = await supabase
         .from('mood_logs')
         .upsert([
@@ -186,11 +199,14 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
           <div className="grid grid-cols-7 gap-1">
             {days.map((day, index) => {
               const isCurrentMonth = day.getMonth() === month;
-              const dateString = day.toISOString().split('T')[0];
+              const dateString = ymdLocal(day);
               const moodEntry = getMoodForDate(day);
               const isSelected = selectedDate === dateString;
               const isToday = day.toDateString() === new Date().toDateString();
               const isFuture = day > new Date();
+
+              const isStreak = streakDays.has(dateString);
+              const isStreakLatest = latestStreakDay === dateString;
               
               return (
                 <Dialog key={index}>
@@ -204,16 +220,20 @@ export const MoodCalendar: React.FC<MoodCalendarProps> = ({
                          ${isToday && !isSelected ? 'bg-accent border border-primary/50' : ''}
                          ${!isSelected && !isToday && !isFuture ? 'hover:bg-accent' : ''}
                          ${moodEntry ? moodOptions[moodEntry.mood]?.color + ' border-2 border-primary/30' : ''}
+                         ${isStreak ? 'ring-2 ring-orange-300' : ''}
                          flex items-center justify-center relative
                        `}
                        onClick={() => !isFuture && onDateSelect(dateString)}
                        disabled={!isCurrentMonth || isFuture}
                     >
                       <span>{day.getDate()}</span>
+
                       {moodEntry && (
-                        <span className="absolute -top-1 -right-1 text-xs">
-                          {moodEntry.emoji}
-                        </span>
+                        <span className="absolute -top-1 -right-1 text-xs">{moodEntry.emoji}</span>
+                      )}
+
+                      {isStreakLatest && (
+                        <span className="absolute -bottom-1 -right-1 text-[10px]">🔥</span>
                       )}
                     </button>
                   </DialogTrigger>

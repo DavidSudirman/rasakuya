@@ -1,10 +1,14 @@
+// src/App.tsx
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/hooks/useLanguage";
+import { MonthlyReviewPrompt } from "@/components/MonthlyReviewPrompt";
+
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
@@ -12,8 +16,83 @@ import Chat from "./pages/Chat";
 import ForgotPassword from "./pages/ForgotPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
+import Profile from "./pages/profile"; // ⬅️ note the lowercase p
+
+
+import { ArunaChatTabs } from "@/components/ArunaChatTabs";
+import OnboardingTherapist from "@/pages/OnboardingTherapist";
+import OnboardingGuard from "@/components/OnboardingGuard";
+
+import { IntroSequence } from "@/components/IntroSequence";
+import { useAuth as useAuthHook } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
+
+// Separate component so we can read the current pathname
+const AppRoutes = () => {
+  const { pathname } = useLocation();
+  const normalized = (pathname || "/").replace(/\/+$/, "") || "/";
+
+  // ✅ Only show the intro on the home route "/"
+  const shouldShowIntro = normalized === "/";
+
+  return (
+    <>
+      {shouldShowIntro && <IntroSequence />}
+
+            <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+        <Route path="/auth/update-password" element={<UpdatePassword />} />
+
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />  {/* ⬅️ add this */}
+
+        <Route path="/onboarding" element={<OnboardingTherapist />} />
+        <Route
+          path="/ai-therapist"
+          element={
+            <OnboardingGuard>
+              <ArunaChatTabs moodEntries={[]} />
+            </OnboardingGuard>
+          }
+        />
+        <Route path="/chat" element={<Chat />} />
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+
+
+      {/* ⬇️ Monthly review only for logged-in users on internal pages */}
+      <AuthedMonthlyReview />
+    </>
+  );
+};
+
+const AuthedMonthlyReview = () => {
+  const { pathname } = useLocation();
+  const { user, loading } = useAuthHook(); // from AuthProvider
+
+  // Pages where we NEVER want to show the popup
+  const publicPaths = [
+    "/",
+    "/auth",
+    "/auth/forgot-password",
+    "/auth/update-password",
+    "/auth/callback",
+  ];
+
+  if (loading) return null;              // still checking auth
+  if (!user) return null;                // not logged in
+  if (publicPaths.includes(pathname)) return null; // on public page
+
+  return (
+    <MonthlyReviewPrompt appVersion={import.meta.env.VITE_APP_VERSION} />
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -22,18 +101,22 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-              <Route path="/auth/update-password" element={<UpdatePassword />} />
-              <Route path="/chat" element={<Chat />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+
+          {/* Global background */}
+          <div
+            className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed"
+            style={{
+              backgroundImage: "url('/themes/trees-bg.png')",
+              backgroundPosition: "center top",
+              backgroundSize: "cover",
+            }}
+          >
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </div>
+
+          
         </TooltipProvider>
       </LanguageProvider>
     </AuthProvider>
