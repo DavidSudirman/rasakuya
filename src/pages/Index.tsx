@@ -35,6 +35,8 @@ type BgMode =
   | "neutral"
   | "anxiety";
 
+const BASE = import.meta.env.VITE_SUPABASE_STORAGE_PUBLIC_URL;
+
 const MOOD_THEME: Record<
   BgMode,
   {
@@ -707,15 +709,18 @@ const handleMoodSelect = (moodId: string | null) => {
           className="fixed inset-0 bg-white animate-whiteflash z-[999] pointer-events-none"
         />
       )}
+      
 
-      {/* 🎬 Main theme video (base background) */}
-      {showInitialVideo && (
-        <BackgroundVideo
-          src="/videos/Maintheme.mp4"
-          poster="/videos/Maintheme.jpg"
-          overlayClassName=""
-        />
-      )}
+
+
+{showInitialVideo && (
+  <BackgroundVideo
+    src={`${BASE}/videos/Maintheme.mp4`}
+    poster={`${BASE}/videos/Maintheme.jpg`}
+    overlayClassName=""
+  />
+)}
+
 
       <NeutralMoodLayer active={bgMode === "neutral"} />
 
@@ -1072,7 +1077,7 @@ const handleMoodSelect = (moodId: string | null) => {
         <video
           key="angry-vfx"
           className="fixed inset-0 w-full h-full object-cover z-[80] video-fire"
-          src="/videos/angryvid.mp4"
+          src={`${BASE}/videos/angryvid.mp4`}
           autoPlay
           muted
           playsInline
@@ -1102,7 +1107,7 @@ const handleMoodSelect = (moodId: string | null) => {
         "fixed inset-0 w-full h-full object-cover z-[89] pointer-events-none transition-opacity duration-700",
         sadBlendOn ? "opacity-80" : "opacity-100"
       )}
-      src="/videos/cloudvid1.mp4"
+      src={`${BASE}/videos/cloudvid1.mp4`}
       autoPlay
       muted
       playsInline
@@ -1125,7 +1130,7 @@ const handleMoodSelect = (moodId: string | null) => {
   <video
     key="anxiety-vfx"
     className="fixed inset-0 w-full h-full object-cover z-[20] pointer-events-none transition-opacity duration-700"
-    src="/videos/fogvid.mp4"
+    src={`${BASE}/videos/fogvid.mp4`}
     autoPlay
     muted
     loop

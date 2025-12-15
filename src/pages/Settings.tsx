@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 
+const BASE = import.meta.env.VITE_SUPABASE_STORAGE_PUBLIC_URL;
 export default function Settings() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
@@ -125,9 +126,9 @@ export default function Settings() {
     <div className="relative min-h-screen overflow-x-hidden">
       {/* 🎬 background like Index */}
       <BackgroundVideo
-        src="/videos/Maintheme.mp4"
-        poster="/videos/Maintheme.jpg"
-        overlayClassName=""
+        src={`${BASE}/videos/Maintheme.mp4`}
+    poster={`${BASE}/videos/Maintheme.jpg`}
+    overlayClassName=""
       />
       <div className="fixed inset-0 bg-black/40 -z-10" />
 

@@ -108,6 +108,9 @@ function useLang(): [Lang, (l: Lang) => void] {
 }
 
 /** Full-screen video background (put files in /public/videos/) */
+const BASE =
+  import.meta.env.VITE_SUPABASE_STORAGE_PUBLIC_URL;
+
 const BackgroundVideo = () => {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
@@ -118,17 +121,20 @@ const BackgroundVideo = () => {
         loop
         playsInline
         preload="auto"
-        poster="/videos/rasakuya-bg.jpg"
         aria-hidden="true"
         tabIndex={-1}
       >
-        <source src="/videos/rasakuya-bg.webm" type="video/webm" />
-        <source src="/videos/rasakuya-bg.mp4" type="video/mp4" />
+        <source
+          src={`${BASE}/videos/rasakuya-bg.mp4`} type="video/mp4" />
+        
       </video>
+
+      {/* Optional overlay */}
       <div className="absolute inset-0 bg-white/20" />
     </div>
   );
 };
+
 
 /** Bilingual intro (EN on top, ID below). */
 const IntroOverlay = ({ onSelect }: { onSelect: (l: Lang) => void }) => {

@@ -14,6 +14,8 @@ const LS_LANG_KEY = "ry-lang";
 // ✅ Make timeout longer here (ms). 90s = 90000
 const FALLBACK_TIMEOUT_MS = 90000;
 
+const BASE = import.meta.env.VITE_SUPABASE_STORAGE_PUBLIC_URL;
+
 const STRINGS: Record<Lang, Record<string, string>> = {
   id: {
     tagline: "Buat password baru Anda",
@@ -107,7 +109,7 @@ const MainThemeBackground = () => {
         tabIndex={-1}
       >
         {/* ✅ Recommended: use lowercase filename in /public/videos/maintheme.mp4 */}
-        <source src="/videos/maintheme.mp4" type="video/mp4" />
+        <source src={`${BASE}/videos/Maintheme.mp4`} type="video/mp4" />
       </video>
 
       {/* readability overlays */}
