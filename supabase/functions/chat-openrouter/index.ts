@@ -92,14 +92,12 @@ type IncomingBody = {
   language?: "id" | "en";
   purpose?: "companion" | "mood_prediction" | "therapist";
   context?: {
-    // keep these SHORT (client will send compact strings)
     mood?: string;
     voice?: string;
   };
 };
 
 function normalizePurpose(raw: unknown): "companion" | "mood_prediction" {
-  // accept legacy client payload
   if (raw === "mood_prediction") return "mood_prediction";
   // legacy "therapist" => companion
   return "companion";
@@ -109,15 +107,10 @@ function normalizeLanguage(raw: unknown): "id" | "en" {
   return raw === "en" ? "en" : "id";
 }
 
-// Make user input smaller: remove excessive whitespace + cap
 function compactUserText(text: string) {
-  return text
-    .replace(/\s{3,}/g, "  ")
-    .trim()
-    .slice(0, 1200); // hard cap input sent to model
+  return text.replace(/\s{3,}/g, "  ").trim().slice(0, 1200);
 }
 
-// Shorter system prompt (still safe + non-clinical)
 function buildSystemPrompt(args: {
   language: "id" | "en";
   purpose: "companion" | "mood_prediction";
@@ -132,6 +125,7 @@ function buildSystemPrompt(args: {
 Help the user reflect, name feelings gently, and choose one small next step.
 
 Rules:
+Reply in English only.
 You are not a therapist/doctor. Do not diagnose or give medical/legal instructions.
 Use soft language ("might", "could", "it seems"). Keep it short (2–5 short paragraphs).
 No lists, no markdown. 0–1 emoji only if it feels natural.
@@ -142,6 +136,7 @@ If they mention self-harm or immediate danger: urge local emergency help + trust
 Bantu pengguna refleksi, memahami perasaan, dan memilih satu langkah kecil.
 
 Aturan:
+Jawab hanya dalam bahasa Indonesia. 
 Kamu bukan terapis/dokter. Jangan mendiagnosis atau memberi instruksi medis/legal.
 Pakai bahasa lembut ("mungkin", "bisa jadi"). Singkat (2–5 paragraf pendek).
 Tanpa daftar, tanpa markdown. 0–1 emoji kalau pas.
@@ -162,7 +157,6 @@ Jika ada self-harm/bahaya langsung: arahkan bantuan darurat setempat + orang tep
   if (styleNote) ctx.push(language === "en" ? `Preferred style: ${styleNote}` : `Gaya favorit: ${styleNote}`);
   if (memorySummary) ctx.push(memorySummary);
 
-  // keep memory rule short
   const memRule =
     language === "en"
       ? `Only output <memory>...</memory> if user shares a stable fact useful later. If used, put ONE tag at the very end.`
@@ -186,7 +180,7 @@ serve(async (req) => {
       return json(401, { success: false, error: "Missing Bearer token" });
     }
 
-    // verify user from JWT
+    // Verify user from JWT (anon client)
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -219,7 +213,7 @@ serve(async (req) => {
 
     const maxChats = 100;
 
-    // enforce limits
+    // ✅ enforce limits BEFORE calling OpenRouter
     if (purpose === "companion") {
       if (usage.chat_count >= maxChats) {
         return json(429, { success: false, error: "CHAT_LIMIT", max_chats: maxChats });
@@ -248,31 +242,37 @@ serve(async (req) => {
     let memorySummary = "";
     let userName = "";
 
-    const { data: prof } = await admin
+    const { data: prof, error: profErr } = await admin
       .from("profiles")
       .select("name, aruna_preferences")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
+    if (profErr) console.warn("profiles read error:", profErr.message);
     if (prof?.name) userName = String(prof.name);
 
     if (prof?.aruna_preferences) {
       try {
-        const prefs = JSON.parse(String(prof.aruna_preferences));
+        const raw = prof.aruna_preferences;
+        const prefs = typeof raw === "string" ? JSON.parse(raw) : raw;
         if (typeof prefs?.style === "string") styleNote = safeSlice(prefs.style, 120);
-      } catch {}
+      } catch (e) {
+        console.warn("aruna_preferences parse error:", String(e));
+      }
     }
 
     // keep only 5 memories to reduce prompt bloat
-    const { data: memRows } = await admin
+    const { data: memRows, error: memErr } = await admin
       .from("aruna_memories")
       .select("item")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(5);
 
+    if (memErr) console.warn("aruna_memories read error:", memErr.message);
+
     if (Array.isArray(memRows) && memRows.length) {
-      const items = memRows.map((r) => safeSlice(r.item, 90)).filter(Boolean);
+      const items = memRows.map((r) => safeSlice((r as any)?.item, 90)).filter(Boolean);
       if (items.length) {
         memorySummary =
           language === "en"
@@ -289,7 +289,6 @@ serve(async (req) => {
       memorySummary: memorySummary || undefined,
     });
 
-    // HARDER trim history (big cost saver)
     const recentHistory = history
       .filter((m) => m && (m.role === "user" || m.role === "assistant"))
       .slice(-8)
@@ -298,25 +297,19 @@ serve(async (req) => {
         content: safeSlice(m.content, 420),
       }));
 
-    // compact context from client (short strings only)
     const moodCtx = safeSlice(body?.context?.mood ?? "", 220);
     const voiceCtx = safeSlice(body?.context?.voice ?? "", 220);
 
-    // compact user input
     const userCore = compactUserText(messageRaw);
 
     const userMsg =
       purpose === "mood_prediction"
         ? (language === "en"
-            ? `Give a gentle estimate for tomorrow based on recent patterns.\nUser: ${userCore}${
-                moodCtx ? `\nMood: ${moodCtx}` : ""
-              }${voiceCtx ? `\nVoice: ${voiceCtx}` : ""}`
-            : `Beri perkiraan lembut tren mood besok berdasarkan pola terbaru.\nPengguna: ${userCore}${
-                moodCtx ? `\nMood: ${moodCtx}` : ""
-              }${voiceCtx ? `\nSuara: ${voiceCtx}` : ""}`)
+          ? `Give a gentle estimate for tomorrow based on recent patterns.\nUser: ${userCore}${moodCtx ? `\nMood: ${moodCtx}` : ""}${voiceCtx ? `\nVoice: ${voiceCtx}` : ""}`
+          : `Beri perkiraan lembut tren mood besok berdasarkan pola terbaru.\nPengguna: ${userCore}${moodCtx ? `\nMood: ${moodCtx}` : ""}${voiceCtx ? `\nSuara: ${voiceCtx}` : ""}`)
         : (language === "en"
-            ? `${userCore}${moodCtx ? `\nMood: ${moodCtx}` : ""}${voiceCtx ? `\nVoice: ${voiceCtx}` : ""}`
-            : `${userCore}${moodCtx ? `\nMood: ${moodCtx}` : ""}${voiceCtx ? `\nSuara: ${voiceCtx}` : ""}`);
+          ? `${userCore}${moodCtx ? `\nMood: ${moodCtx}` : ""}${voiceCtx ? `\nVoice: ${voiceCtx}` : ""}`
+          : `${userCore}${moodCtx ? `\nMood: ${moodCtx}` : ""}${voiceCtx ? `\nSuara: ${voiceCtx}` : ""}`);
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -346,22 +339,24 @@ serve(async (req) => {
       console.error("OpenRouter API error:", resp.status, errTxt);
       return json(resp.status === 429 ? 429 : 500, {
         success: false,
-        error: resp.status === 429
-          ? "AI service is busy (429). Try again shortly."
-          : "AI service temporarily unavailable.",
+        error: "OPENROUTER_ERROR",
+        status: resp.status,
+        detail: errTxt.slice(0, 1200),
       });
     }
 
     const data = await resp.json();
     const answer = data?.choices?.[0]?.message?.content ?? "…";
 
-    // increment usage ONLY after success
+    // ✅ increment usage ONLY after success (NO RPC)
     if (purpose === "companion") {
-      const { error: rpcErr } = await admin.rpc("aruna_increment_chat_count", {
-        p_user_id: userId,
-        p_date_utc: today,
-      });
-      if (rpcErr) throw rpcErr;
+      const { error: incErr } = await admin
+        .from("aruna_daily_usage")
+        .update({ chat_count: usage.chat_count + 1 })
+        .eq("user_id", userId)
+        .eq("date_utc", today);
+
+      if (incErr) console.warn("chat_count update failed:", incErr.message);
     } else {
       const { error: upErr } = await admin
         .from("aruna_daily_usage")
@@ -372,7 +367,8 @@ serve(async (req) => {
         })
         .eq("user_id", userId)
         .eq("date_utc", today);
-      if (upErr) throw upErr;
+
+      if (upErr) console.warn("mood_prediction update failed:", upErr.message);
     }
 
     const newUsage = await getDailyUsage(admin, userId, today);
@@ -391,8 +387,16 @@ serve(async (req) => {
         mood_prediction_at: newUsage.mood_prediction_at,
       },
     });
-  } catch (e) {
+  } catch (e: any) {
     console.error("❌ Error in chat-openrouter:", e);
-    return json(500, { success: false, error: "Internal server error", detail: String(e) });
+
+    const detail =
+      typeof e?.message === "string"
+        ? e.message
+        : typeof e === "string"
+        ? e
+        : JSON.stringify(e, Object.getOwnPropertyNames(e));
+
+    return json(500, { success: false, error: "Internal server error", detail });
   }
 });
