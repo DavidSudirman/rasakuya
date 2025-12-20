@@ -19,6 +19,14 @@ import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import Profile from "./pages/profile"; // ⬅️ note the lowercase p
 
+// ✅ NEW: legal pages
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Pricing from "./pages/Pricing";
+import Refund from "./pages/Refund";
+// ✅ If you have Pricing.tsx, keep this import.
+// If your pricing page is named differently, adjust the import/path.
+
 
 import { ArunaChatTabs } from "@/components/ArunaChatTabs";
 import OnboardingTherapist from "@/pages/OnboardingTherapist";
@@ -26,6 +34,7 @@ import OnboardingGuard from "@/components/OnboardingGuard";
 
 import { IntroSequence } from "@/components/IntroSequence";
 import { useAuth as useAuthHook } from "@/hooks/useAuth";
+import Questioning from "./pages/Questioning";
 
 const queryClient = new QueryClient();
 
@@ -41,15 +50,26 @@ const AppRoutes = () => {
     <>
       {shouldShowIntro && <IntroSequence />}
 
-            <Routes>
+      <Routes>
         <Route path="/" element={<Index />} />
+
+        {/* Auth */}
         <Route path="/auth" element={<Auth />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/forgot-password" element={<ForgotPassword />} />
         <Route path="/auth/update-password" element={<UpdatePassword />} />
 
+        {/* ✅ Public commerce/legal */}
+        
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/questioning" element={<Questioning />} />
+        <Route path="/refund" element={<Refund />} />
+
+        {/* App */}
         <Route path="/settings" element={<Settings />} />
-        <Route path="/profile" element={<Profile />} />  {/* ⬅️ add this */}
+        <Route path="/profile" element={<Profile />} />
 
         <Route path="/onboarding" element={<OnboardingTherapist />} />
         <Route
@@ -64,7 +84,6 @@ const AppRoutes = () => {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
-
 
       {/* ⬇️ Monthly review only for logged-in users on internal pages */}
       <AuthedMonthlyReview />
@@ -83,10 +102,14 @@ const AuthedMonthlyReview = () => {
     "/auth/forgot-password",
     "/auth/update-password",
     "/auth/callback",
+    "/pricing",
+    "/terms",
+    "/privacy",
+    "/refund",
   ];
 
-  if (loading) return null;              // still checking auth
-  if (!user) return null;                // not logged in
+  if (loading) return null;                     // still checking auth
+  if (!user) return null;                       // not logged in
   if (publicPaths.includes(pathname)) return null; // on public page
 
   return (
@@ -115,8 +138,6 @@ const App = () => (
               <AppRoutes />
             </BrowserRouter>
           </div>
-
-          
         </TooltipProvider>
       </LanguageProvider>
     </AuthProvider>
