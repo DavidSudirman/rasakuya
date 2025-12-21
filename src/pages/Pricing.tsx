@@ -1,13 +1,24 @@
+// src/pages/Pricing.tsx
 import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Check } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const BASE = import.meta.env.VITE_SUPABASE_STORAGE_PUBLIC_URL;
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const features = [
+    t("pricing.features.1"),
+    t("pricing.features.2"),
+    t("pricing.features.3"),
+    t("pricing.features.4"),
+  ];
 
   return (
     <div className="min-h-screen text-white">
@@ -35,52 +46,64 @@ export default function Pricing() {
             onClick={() => navigate("/questioning")}
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
-            Back
+            {t("pricing.back")}
           </Button>
 
-          <div className="text-sm text-white/80">
-            <Link to="/terms" className="underline underline-offset-4 hover:text-white">
-              Terms
-            </Link>{" "}
-            •{" "}
-            <Link to="/privacy" className="underline underline-offset-4 hover:text-white">
-              Privacy
-            </Link>{" "}
-            •{" "}
-            <Link to="/refund" className="underline underline-offset-4 hover:text-white">
-              Refund
+          <div className="text-sm text-white/80 flex items-center gap-3">
+            <Link
+              to="/terms"
+              className="underline underline-offset-4 hover:text-white"
+            >
+              {t("pricing.links.terms")}
             </Link>
+            <span>•</span>
+            <Link
+              to="/privacy"
+              className="underline underline-offset-4 hover:text-white"
+            >
+              {t("pricing.links.privacy")}
+            </Link>
+            <span>•</span>
+            <Link
+              to="/refund"
+              className="underline underline-offset-4 hover:text-white"
+            >
+              {t("pricing.links.refund")}
+            </Link>
+
+            <LanguageSelector />
           </div>
         </div>
 
         <Card className="bg-white/10 border-white/20 backdrop-blur-xl rounded-2xl p-6 md:p-10">
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white">
-            Pricing
+            {t("pricing.page_title")}
           </h1>
-          <p className="text-white/70 mt-2">
-            One simple plan — full access to insights + ARUNA.
-          </p>
+          <p className="text-white/70 mt-2">{t("pricing.page_subtitle")}</p>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             <Card className="bg-white/10 border-white/20 backdrop-blur-xl rounded-2xl p-6">
               <div className="flex items-baseline justify-between gap-4">
                 <div>
-                  <div className="text-xl font-semibold text-white">RasakuYa Premium</div>
-                  <div className="text-white/70 mt-1">Best for daily tracking</div>
+                  <div className="text-xl font-semibold text-white">
+                    {t("pricing.plan.name")}
+                  </div>
+                  <div className="text-white/70 mt-1">
+                    {t("pricing.plan.desc")}
+                  </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-semibold text-white">Rp 40.000</div>
-                  <div className="text-white/70 text-sm">/ month</div>
+                  <div className="text-3xl font-semibold text-white">
+                    {t("pricing.plan.price")}
+                  </div>
+                  <div className="text-white/70 text-sm">
+                    {t("pricing.plan.per_month")}
+                  </div>
                 </div>
               </div>
 
               <div className="mt-6 space-y-3 text-white/90">
-                {[
-                  "Access to RasakuYa Software",
-                  "ARUNA AI companion (100 chats per day)",
-                  "Access to Mood Tracker and Mood Calendar",
-                  "Access to Mood Predictor (1 per day)",
-                ].map((item) => (
+                {features.map((item) => (
                   <div key={item} className="flex items-start gap-3">
                     <Check className="h-5 w-5 mt-0.5" />
                     <span>{item}</span>
@@ -91,17 +114,23 @@ export default function Pricing() {
               <div className="mt-8 space-y-3">
                 {/* Replace with your LemonSqueezy checkout URL later */}
                 <Button className="w-full" onClick={() => navigate("/auth")}>
-                  Continue to Payment
+                  {t("pricing.cta.pay")}
                 </Button>
 
                 <p className="text-xs text-white/70 text-center">
-                  By continuing, you agree to our{" "}
-                  <Link to="/terms" className="underline underline-offset-4 hover:text-white">
-                    Terms
+                  {t("pricing.notice")}{" "}
+                  <Link
+                    to="/terms"
+                    className="underline underline-offset-4 hover:text-white"
+                  >
+                    {t("pricing.links.terms")}
                   </Link>{" "}
-                  and{" "}
-                  <Link to="/privacy" className="underline underline-offset-4 hover:text-white">
-                    Privacy Policy
+                  {t("common.and")}{" "}
+                  <Link
+                    to="/privacy"
+                    className="underline underline-offset-4 hover:text-white"
+                  >
+                    {t("pricing.links.privacy")}
                   </Link>
                   .
                 </p>
@@ -110,12 +139,14 @@ export default function Pricing() {
 
             <div className="flex flex-col justify-center">
               <Card className="bg-white/10 border-white/20 backdrop-blur-xl rounded-2xl p-6">
-                <div className="text-lg font-semibold text-white">What you’ll notice</div>
+                <div className="text-lg font-semibold text-white">
+                  {t("pricing.side.title")}
+                </div>
                 <ul className="mt-3 space-y-2 text-white/85 leading-relaxed list-disc pl-5">
-                  <li>Patterns become obvious (sleep, stress, triggers)</li>
-                  <li>You stop “guessing” what happened that day</li>
-                  <li>ARUNA helps you reflect without feeling judged</li>
-                  <li>You build a calm habit, not a chore</li>
+                  <li>{t("pricing.side.a")}</li>
+                  <li>{t("pricing.side.b")}</li>
+                  <li>{t("pricing.side.c")}</li>
+                  <li>{t("pricing.side.d")}</li>
                 </ul>
               </Card>
             </div>
