@@ -81,6 +81,8 @@ const translations: Record<Language, Record<string, string>> = {
     "account.settings": "Settings",
     "account.payment": "Payment Options",
 
+    
+
     // Questioning
 "questioning.back_to_auth": "Back to Auth",
 "questioning.step": "{current} / {total}",
