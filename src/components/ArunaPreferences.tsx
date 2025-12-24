@@ -119,8 +119,8 @@ export const ArunaPreferences: React.FC<ArunaPreferencesProps> = ({ onClose }) =
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           {language === 'id'
-            ? 'Atur tipe terapis dan gaya bicara ARUNA'
-            : 'Set therapist type and response style'}
+            ? 'Atur tipe AI dan gaya bicara ARUNA'
+            : 'Set AI type and response style'}
         </p>
       </div>
 

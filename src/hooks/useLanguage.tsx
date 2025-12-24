@@ -323,6 +323,18 @@ const translations: Record<Language, Record<string, string>> = {
     "prediction.ai_error": "Could not generate insights. Please try again.",
     "prediction.ai_not_enough": "Not enough data for deeper insights. Log your mood more often for better patterns.",
     "prediction.footer": "Based on {count} mood entries • Average score: {avg}/5",
+
+    // Legal common (add these)
+"legal.operator_name": "David Lyon",
+"legal.brand_name": "RasakuYa",
+
+// Terms (add these new sections)
+"terms.operator.title": "2. Operator",
+"terms.operator.body":
+  "RasakuYa is operated by {operator} (sole proprietor) under the brand {brand}.",
+
+
+
   },
 
   id: {
@@ -634,6 +646,16 @@ const translations: Record<Language, Record<string, string>> = {
     "prediction.ai_error": "Tidak dapat menghasilkan insight. Coba lagi.",
     "prediction.ai_not_enough": "Belum cukup data untuk insight yang lebih dalam. Catat mood lebih sering untuk pola yang lebih baik.",
     "prediction.footer": "Berdasarkan {count} entri mood • Skor rata-rata: {avg}/5",
+
+    // Legal common (add these)
+"legal.operator_name": "David Lyon",
+"legal.brand_name": "RasakuYa",
+
+// Terms (add these new sections)
+"terms.operator.title": "2. Penyelenggara",
+"terms.operator.body":
+  "RasakuYa dioperasikan oleh {operator} (usaha perorangan) dengan merek {brand}.",
+
   },
 };
 

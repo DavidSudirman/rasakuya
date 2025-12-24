@@ -38,9 +38,9 @@ export default function OnboardingOverlay({ open, onDone }: Props) {
   const L = {
     en: {
       l1: "Everyone deserves to be heard",
-      l2: "The right therapist can change your life",
+      l2: "The right AI can change your life",
       l3: "Let’s imagine yours, together.",
-      q: "What is your ideal therapist?",
+      q: "What is your ideal AI companion (AI is not intended to diagnose, treat, cure, or prevent any medical or mental health condition)?",
       placeholder: "Write freely—tone, style, things you like/dislike…",
       saving: "Saving...",
       cta: "Continue",
@@ -49,9 +49,9 @@ export default function OnboardingOverlay({ open, onDone }: Props) {
     },
     id: {
       l1: "Setiap orang berhak didengarkan",
-      l2: "Terapis yang tepat dapat mengubah hidup Anda",
+      l2: "AI yang tepat dapat mengubah hidup Anda",
       l3: "Mari kita bayangkan hidup Anda bersama-sama.",
-      q: "Terapi ideal kamu itu seperti apa?",
+      q: "AI pendamping ideal kamu itu seperti apa (AI tidak dimaksudkan untuk mendiagnosis, mengobati, menyembuhkan, atau mencegah kondisi medis atau kesehatan mental apa pun)?",
       placeholder: "Tulis sebebasnya—gaya bicara, nada, hal yang kamu suka/tidak suka…",
       saving: "Menyimpan...",
       cta: "Lanjut",

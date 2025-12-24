@@ -16,7 +16,7 @@ export default function Terms() {
 
   return (
     <div className="min-h-screen text-white">
-      {/* ✅ Fixed background video (no scrolling outside) */}
+      {/* Background */}
       <div className="fixed inset-0 -z-10">
         <video
           className="w-full h-full object-cover"
@@ -28,14 +28,12 @@ export default function Terms() {
         >
           <source src={`${BASE}/videos/rasakuya-bg.mp4`} type="video/mp4" />
         </video>
-
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-black/60" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-10">
-        {/* Top bar: Back + Language */}
+        {/* Top bar */}
         <div className="mb-4 flex items-center justify-between">
           <Button
             variant="ghost"
@@ -54,9 +52,12 @@ export default function Terms() {
             {t("terms.title")}
           </h1>
 
-          <p className="text-white/70 mt-2">{t("legal.last_updated", { date })}</p>
+          <p className="text-white/70 mt-2">
+            {t("legal.last_updated", { date })}
+          </p>
 
           <div className="mt-8 space-y-6 text-white/85 leading-relaxed">
+            {/* 1. About */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.about.title")}
@@ -64,6 +65,20 @@ export default function Terms() {
               <p className="mt-2">{t("terms.about.body")}</p>
             </section>
 
+            {/* 2. Operator / Legal Entity (REQUIRED by Paddle) */}
+            <section>
+              <h2 className="text-xl font-semibold text-white">
+                {t("terms.operator.title")}
+              </h2>
+              <p className="mt-2">
+                {t("terms.operator.body", {
+                  operator: t("legal.operator_name"),
+                  brand: t("legal.brand_name"),
+                })}
+              </p>
+            </section>
+
+            {/* 3. Not Medical */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.not_medical.title")}
@@ -71,6 +86,7 @@ export default function Terms() {
               <p className="mt-2">{t("terms.not_medical.body")}</p>
             </section>
 
+            {/* 4. Eligibility */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.eligibility.title")}
@@ -78,6 +94,7 @@ export default function Terms() {
               <p className="mt-2">{t("terms.eligibility.body")}</p>
             </section>
 
+            {/* 5. Account */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.account.title")}
@@ -85,6 +102,7 @@ export default function Terms() {
               <p className="mt-2">{t("terms.account.body")}</p>
             </section>
 
+            {/* 6. Acceptable Use */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.use.title")}
@@ -92,6 +110,7 @@ export default function Terms() {
               <p className="mt-2">{t("terms.use.body")}</p>
             </section>
 
+            {/* 7. AI Limitations */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.ai.title")}
@@ -99,6 +118,7 @@ export default function Terms() {
               <p className="mt-2">{t("terms.ai.body")}</p>
             </section>
 
+            {/* 8. Billing */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.billing.title")}
@@ -106,6 +126,7 @@ export default function Terms() {
               <p className="mt-2">{t("terms.billing.body")}</p>
             </section>
 
+            {/* 9. Refunds */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.refunds.title")}
@@ -113,6 +134,7 @@ export default function Terms() {
               <p className="mt-2">{t("terms.refunds.body")}</p>
             </section>
 
+            {/* 10. Privacy */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.privacy.title")}
@@ -120,6 +142,7 @@ export default function Terms() {
               <p className="mt-2">{t("terms.privacy.body")}</p>
             </section>
 
+            {/* 11. Changes */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.changes.title")}
@@ -127,12 +150,15 @@ export default function Terms() {
               <p className="mt-2">{t("terms.changes.body")}</p>
             </section>
 
+            {/* 12. Contact */}
             <section>
               <h2 className="text-xl font-semibold text-white">
                 {t("terms.contact.title")}
               </h2>
               <p className="mt-2">
-                {t("terms.contact.body", { email: t("legal.contact_email") })}
+                {t("terms.contact.body", {
+                  email: t("legal.contact_email"),
+                })}
               </p>
             </section>
           </div>
