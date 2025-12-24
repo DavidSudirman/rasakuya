@@ -325,13 +325,13 @@ const translations: Record<Language, Record<string, string>> = {
     "prediction.footer": "Based on {count} mood entries • Average score: {avg}/5",
 
     // Legal common (add these)
-"legal.operator_name": "David Lyon",
+"legal.operator_name": "Daud Sudirman",
 "legal.brand_name": "RasakuYa",
 
 // Terms (add these new sections)
 "terms.operator.title": "2. Operator",
 "terms.operator.body":
-  "RasakuYa is operated by {operator} (sole proprietor) under the brand {brand}.",
+  "RasakuYa is operated by {operator} under the brand {brand}.",
 
 
 
@@ -648,13 +648,13 @@ const translations: Record<Language, Record<string, string>> = {
     "prediction.footer": "Berdasarkan {count} entri mood • Skor rata-rata: {avg}/5",
 
     // Legal common (add these)
-"legal.operator_name": "David Lyon",
+"legal.operator_name": "Daud Sudirman",
 "legal.brand_name": "RasakuYa",
 
 // Terms (add these new sections)
 "terms.operator.title": "2. Penyelenggara",
 "terms.operator.body":
-  "RasakuYa dioperasikan oleh {operator} (usaha perorangan) dengan merek {brand}.",
+  "RasakuYa dioperasikan oleh {operator} dengan merek {brand}.",
 
   },
 };
